@@ -53,12 +53,17 @@ export function asciiMarkers(env: Readonly<Record<string, string | undefined>> =
   return flag || !/utf-?8/i.test(env.LC_ALL || env.LC_CTYPE || env.LANG || "");
 }
 
-export function terminalText(value: unknown): string {
-  return String(value ?? "")
+/** Remove terminal sequences and normalize line endings. Single-line mode replaces remaining controls with spaces. */
+export function terminalText(value: unknown, options: { singleLine?: boolean } = {}): string {
+  const text = String(value ?? "")
+    .replace(/\r\n?/g, "\n")
     .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\|$)/g, "")
     .replace(/\x1b[P_X^][\s\S]*?(?:\x1b\\|$)/g, "")
-    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
-    .replace(/\x1b[^\n]?/g, "").replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "");
+    .replace(/(?:\x1b\[|)[0-?]*[ -/]*(?:[@-~]|(?=\n|$))/g, "")
+    .replace(/\x1b[^\n]?/g, "");
+  return options.singleLine
+    ? text.replace(/[\x00-\x1f\x7f-]/g, " ")
+    : text.replace(/[\x00-\x08\x0b-\x1f\x7f-]/g, "");
 }
 
 export interface Span { text: string; role?: Role }
