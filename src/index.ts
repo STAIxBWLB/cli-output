@@ -1,13 +1,12 @@
-// CLI output standard v1 (docs/standard-v1.md): the portable core. This file imports nothing, so a CLI outside the hub can reuse it as is. It holds the nine roles, the marker table and color resolution.
+// CLI output standard v1: semantic roles, markers, color, text and layout.
 // Human-output code names a role or a marker, never an SGR code or a glyph literal.
 /**
  * The nine semantic roles of CLI output standard v1 on the 16 ANSI colors, so a terminal theme decides the shades. Code names a role,
- * never an SGR code (`test/cli-output-conformance.test.ts` fails on a raw SGR literal in `src/cli/` and `src/hub/`). `value` is the
+ * never an SGR code. `value` is the
  * default foreground and carries no SGR. Bold is only for `header`, `section` and the three status roles; no backgrounds.
  */
 /** End of every painted span. */
 export const SGR_RESET = "\x1b[0m";
-/** SGR of the console tones that are not an identity palette entry; the role table above is the standard, these are the TUI's own. */
 export type Role = "header" | "section" | "key" | "value" | "success" | "warning" | "error" | "hint" | "accent";
 export const ROLE_SGR: Readonly<Record<Role, string>> = Object.freeze({
   header: "\x1b[1;34m", section: "\x1b[1;35m", key: "\x1b[34m", value: "", success: "\x1b[1;32m", warning: "\x1b[1;33m", error: "\x1b[1;31m", hint: "\x1b[90m", accent: "\x1b[36m",
@@ -68,7 +67,7 @@ export function paint(spans: readonly Span[], color: boolean): string {
 }
 export class Report {
   private readonly out: Span[][] = [];
-  /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set, so a script reading `ahub doctor | grep` gets whole lines. */
+  /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set. */
   constructor(readonly columns: number | undefined = undefined, readonly ascii = false) {}
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
@@ -186,9 +185,7 @@ export class Report {
 export function wrap(value: unknown, columns: number, hang = 4): string[] {
   const lines: string[] = [];
   const half = Math.floor(columns / 2);
-  // A bare chunk ending in "--- from" becomes a header marker when table padding follows it.
-  const quoteChunk = (text: string) => text;
-  const width = (text: string) => cellWidth(quoteChunk(text));
+  const width = cellWidth;
   for (const part of terminalText(value).replace(/\t/g, " ").split("\n")) {
     const indent = /^\s*/.exec(part)![0];
     const lead = Math.min(cellWidth(indent), half);
@@ -196,7 +193,7 @@ export function wrap(value: unknown, columns: number, hang = 4): string[] {
     const first = lines.length;
     let start = " ".repeat(lead);
     let line = start;
-    const push = () => { lines.push(quoteChunk(line.trimEnd())); line = start = pad; };
+    const push = () => { lines.push(line.trimEnd()); line = start = pad; };
     for (const token of part.slice(indent.length).match(/\s+|\S+/g) ?? []) {
       if (width(line + token) <= columns) { line += token; continue; }
       if (line !== start) push();
@@ -206,7 +203,7 @@ export function wrap(value: unknown, columns: number, hang = 4): string[] {
         line += char;
       }
     }
-    if (line !== start || lines.length === first) lines.push(quoteChunk(line.trimEnd()));
+    if (line !== start || lines.length === first) lines.push(line.trimEnd());
   }
   return lines;
 }

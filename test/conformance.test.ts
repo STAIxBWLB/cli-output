@@ -31,3 +31,22 @@ test("table caps non-flexible columns and drops empty columns", () => {
   expect(rows[1]).toContain("...");
   for (const line of rows) expect(cellWidth(line)).toBeLessThanOrEqual(80);
 });
+
+test("reference marker table parity", () => {
+  expect(MARKERS).toEqual({
+    ok: { glyph: "✓", ascii: "ok", role: "success" }, fail: { glyph: "✗", ascii: "x", role: "error" }, warn: { glyph: "⚠", ascii: "!", role: "warning" },
+    absent: { glyph: "-", ascii: "-", role: "hint" }, unknown: { glyph: "?", ascii: "?", role: "hint" }, pending: { glyph: "~", ascii: "~", role: "hint" },
+    active: { glyph: "*", ascii: "*", role: "success" }, next: { glyph: "→", ascii: "->", role: "accent" },
+  });
+});
+test("reference color table parity", () => {
+  const tty = { isTTY: true }, pipe = { isTTY: false };
+  const cases: [string | undefined, typeof tty & Record<string, string | boolean>, boolean][] = [
+    ["never", {...tty, FORCE_COLOR:"1"}, false], ["always", {...pipe, NO_COLOR:"1", TERM:"dumb"}, true],
+    [undefined, {...tty, NO_COLOR:"1"}, false], ["auto", {...tty, NO_COLOR:"1", FORCE_COLOR:"1"}, false], [undefined, {...pipe, NO_COLOR:"1", CLICOLOR_FORCE:"1"}, false], [undefined, {...tty, NO_COLOR:""}, true],
+    [undefined, {...pipe, FORCE_COLOR:"1"}, true], [undefined, {...pipe, FORCE_COLOR:"true"}, true], [undefined, {...pipe, CLICOLOR_FORCE:"1"}, true], [undefined, {...pipe, TERM:"dumb", FORCE_COLOR:"1"}, true], [undefined, {...pipe, FORCE_COLOR:""}, false], [undefined, {...pipe, CLICOLOR_FORCE:"0"}, false],
+    [undefined, {...tty, FORCE_COLOR:"0"}, false], [undefined, {...tty, CLICOLOR:"0"}, false], [undefined, {...tty, CLICOLOR:"1"}, true], [undefined, {...pipe, FORCE_COLOR:"0", CLICOLOR_FORCE:"1"}, true],
+    [undefined, tty, true], ["auto", {...tty, TERM:"xterm-256color"}, true], [undefined, {...tty, TERM:"dumb"}, false], [undefined, pipe, false], ["auto", {...pipe, TERM:"xterm"}, false],
+  ];
+  for (const [flag, env, expected] of cases) expect(resolveColor(flag, env, "tool")).toBe(expected);
+});
