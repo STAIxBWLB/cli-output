@@ -1,0 +1,23 @@
+{
+  "id": "next-quoted-80",
+  "input": {
+    "columns": 80,
+    "ascii": false,
+    "operations": [
+      {
+        "op": "next",
+        "command": "printf '%s\\n' 'alpha beta' \"gamma delta\" fingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef tail"
+      }
+    ]
+  },
+  "plain": [
+    "    →  printf '%s\\n' 'alpha beta' \"gamma delta\" \\",
+    "       fingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \\",
+    "       tail"
+  ],
+  "colored": [
+    "    \u001b[36m→  printf '%s\\n' 'alpha beta' \"gamma delta\" \\\u001b[0m",
+    "       \u001b[36mfingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \\\u001b[0m",
+    "       \u001b[36mtail\u001b[0m"
+  ]
+}

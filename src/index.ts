@@ -90,6 +90,22 @@ export function paint(spans: readonly Span[], color: boolean, styles: Readonly<R
     return color && sgr && text ? sgr + text + SGR_RESET : text;
   }).join("");
 }
+/** Split only at unquoted, unescaped horizontal whitespace; shell comments remain whole. */
+function commandWords(command: string): string[] {
+  const words: string[] = []; let word = ""; let quote = ""; let escaped = false;
+  for (let index = 0; index < command.length; index++) {
+    const char = command[index]!;
+    if (escaped) { word += char; escaped = false; continue; }
+    if (char === "\\" && quote !== "'") { word += char; escaped = true; continue; }
+    if (quote) { word += char; if (char === quote) quote = ""; continue; }
+    if (char === "'" || char === '"' || char === "`") { quote = char; word += char; continue; }
+    if (char === "#" && !word) { word = command.slice(index); break; }
+    if (char === " " || char === "\t") { if (word) { words.push(word); word = ""; } continue; }
+    word += char;
+  }
+  if (word) words.push(word);
+  return words;
+}
 export class Report {
   private readonly out: Span[][] = [];
   /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set. */
@@ -229,7 +245,23 @@ export class Report {
   }
   /** `    →  <command>` in `accent`: complete and copyable, never shortened. */
   next(command: string): this {
-    this.push([{ text: "    " }, { text: `${markerCell("next", this.ascii)} ${this.clean(command)}`, role: "accent" }]);
+    const text = this.clean(command), marker = `${markerCell("next", this.ascii)} `;
+    if (this.columns === undefined || text.includes("\n") || cellWidth("    " + marker + text) <= this.columns) {
+      this.push([{ text: "    " }, { text: marker + text, role: "accent" }]);
+      return this;
+    }
+    const words = commandWords(text), room = Math.max(1, this.columns - 4 - cellWidth(marker));
+    if (!words.length) { this.push([{ text: "    " }, { text: marker + text, role: "accent" }]); return this; }
+    let line = ""; const lines: string[] = [];
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (line && cellWidth(candidate) > room - 2) { lines.push(line + " \\"); line = word; }
+      else line = candidate;
+    }
+    if (line) lines.push(line);
+    for (const [index, part] of lines.entries()) {
+      this.push([{ text: index ? " ".repeat(4 + cellWidth(marker)) : "    " }, { text: (index ? "" : marker) + part, role: "accent" }]);
+    }
     return this;
   }
   /** The last line of a check command: `✗ 2 failed  ⚠ 3 warnings  ✓ 18 ok`, zero counts omitted, unknowns as `? 2 unknown`. */
