@@ -121,3 +121,18 @@ test("sanitizer runs on table headings and wrapped bullet text before layout", (
   expect(report.render(false).join("\n")).not.toMatch(/(^|\n)\s*\[agent-hub/i);
   expect(report.render(false).join("\n")).toContain("> [agent-hub");
 });
+
+test("next-step continuation preserves shell arguments and leaves long tokens whole", () => {
+  const command = `printf '%s\\n' 'alpha beta' "gamma delta" fingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef tail`;
+  const original = Bun.spawnSync(["sh", "-c", command]);
+  for (const width of [30, 80]) {
+    const lines = new Report(width).next(command).render(false);
+    const script = lines.map((line, i) => i === 0 ? line.slice(7) : line).join("\n");
+    const actual = Bun.spawnSync(["sh", "-c", script]);
+    expect(actual.exitCode).toBe(original.exitCode);
+    expect(actual.stdout.toString()).toBe(original.stdout.toString());
+    for (const line of lines) if (!line.includes("fingerprint-")) expect(cellWidth(line)).toBeLessThanOrEqual(width);
+    expect(lines.join("\n")).toContain("fingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+  }
+  expect(new Report().next(command).render(false)).toEqual([`    →  ${command}`]);
+});

@@ -19,6 +19,8 @@ Table cells may be strings or `{ text, role }` spans. `table` accepts `{ indent,
 
 `Report` accepts an optional third argument `{ sanitize, styles }`. `sanitize` is an idempotent text-to-text function applied before wrapping, to assembled lines at construction, and again before rendering; terminal controls are still removed. If sanitization changes an assembled line, that line is rendered without span styles because its original span boundaries may no longer be valid. Consumer `styles` map names to ANSI SGR sequences, and `Span.style` selects one; standard `role` takes precedence.
 
+The `quote-headers` sanitizer named by the consumer report fixture prefixes `> ` to each line whose first non-whitespace text starts with `[agent-hub` (case-insensitive, followed by a word boundary) or `--- from ` (case-insensitive).
+
 ## Vendoring tokens and fixtures
 
 For a non-Bun implementation, copy `tokens/v1.json` and `fixtures/v1/` from an exact release tag, preserving paths. Record the tag alongside the copies. Verify each vendored file against that tag with `git show <tag>:<path>` and a SHA-256 comparison, and check the complete file list as well as the checksums. Run all fixtures in the consumer's tests.
