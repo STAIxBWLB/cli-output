@@ -1,6 +1,6 @@
 {
   "name": "@staix/cli-output",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "CLI output standard v1 for Bun",
   "type": "module",
   "repository": { "type": "git", "url": "git+https://github.com/STAIxBWLB/cli-output.git" },
