@@ -316,6 +316,38 @@ export function wrap(value: unknown, columns?: number, hang = 4): string[] {
   return lines;
 }
 
+/** Wrap semantic spans without losing their roles or styles at line breaks. */
+export function wrapSpans(spans: readonly Span[], columns?: number, hang = 4): Span[][] {
+  const raw = spans.map(span => span.text).join("");
+  const whole = terminalText(raw);
+  let clean = spans.map(span => ({ ...span, text: terminalText(span.text) }));
+  // A control sequence crossing span boundaries must be removed as one unit.
+  if (clean.map(span => span.text).join("") !== whole) clean = [{ text: whole }];
+  if (columns === undefined) return [clean];
+  clean = clean.map(span => ({ ...span, text: span.text.replace(/\t/g, " ") }));
+  const text = clean.map(span => span.text).join("");
+  const lines = wrap(text, columns, hang);
+  let cursor = 0;
+  return lines.map(line => {
+    const content = line.trimStart();
+    if (!content) return [{ text: line }];
+    const start = text.indexOf(content, cursor);
+    if (start < 0) throw new Error("wrapped span text could not be mapped to its source");
+    const end = start + content.length; cursor = end;
+    const result: Span[] = [];
+    const indent = line.slice(0, line.length - content.length);
+    if (indent) result.push({ text: indent });
+    let offset = 0;
+    for (const span of clean) {
+      const next = offset + span.text.length;
+      if (next > start && offset < end) result.push({ ...span, text: span.text.slice(Math.max(0, start - offset), Math.min(span.text.length, end - offset)) });
+      offset = next;
+      if (offset >= end) break;
+    }
+    return result;
+  });
+}
+
 /** Unindented plain-text lines for streaming or direct painting. */
 export function lineSpans(text: string, columns?: number): Span[][] {
   return wrap(text, columns, 0).map(line => [{ text: line }]);

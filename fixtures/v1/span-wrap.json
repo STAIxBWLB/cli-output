@@ -1,0 +1,102 @@
+[
+  {
+    "id": "split-colored",
+    "input": [
+      {
+        "text": "alpha beta gamma",
+        "role": "error"
+      }
+    ],
+    "columns": 10,
+    "hang": 0,
+    "expected": [
+      [
+        {
+          "text": "alpha beta",
+          "role": "error"
+        }
+      ],
+      [
+        {
+          "text": "gamma",
+          "role": "error"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[1;31malpha beta\u001b[0m",
+      "\u001b[1;31mgamma\u001b[0m"
+    ]
+  },
+  {
+    "id": "unbounded",
+    "input": [
+      {
+        "text": "hello ",
+        "role": "hint"
+      },
+      {
+        "text": "world",
+        "style": "peer"
+      }
+    ],
+    "styles": {
+      "peer": "\u001b[35m"
+    },
+    "expected": [
+      [
+        {
+          "text": "hello ",
+          "role": "hint"
+        },
+        {
+          "text": "world",
+          "style": "peer"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[90mhello \u001b[0m\u001b[35mworld\u001b[0m"
+    ]
+  },
+  {
+    "id": "cross-grapheme",
+    "input": [
+      {
+        "text": "👩",
+        "style": "peer"
+      },
+      {
+        "text": "‍💻x",
+        "role": "accent"
+      }
+    ],
+    "styles": {
+      "peer": "\u001b[35m"
+    },
+    "columns": 2,
+    "hang": 0,
+    "expected": [
+      [
+        {
+          "text": "👩",
+          "style": "peer"
+        },
+        {
+          "text": "‍💻",
+          "role": "accent"
+        }
+      ],
+      [
+        {
+          "text": "x",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[35m👩\u001b[0m\u001b[36m‍💻\u001b[0m",
+      "\u001b[36mx\u001b[0m"
+    ]
+  }
+]

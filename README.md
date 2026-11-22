@@ -21,6 +21,10 @@ Table cells may be strings or `{ text, role }` spans. `table` accepts `{ indent,
 
 The `quote-headers` sanitizer named by the consumer report fixture prefixes `> ` to each line whose first non-whitespace text starts with `[agent-hub` (case-insensitive, followed by a word boundary) or `--- from ` (case-insensitive).
 
+`wrapSpans(spans, columns?, hang?)` wraps sanitized semantic spans while retaining their roles and styles. Without a width it returns one line containing the sanitized spans. A terminal escape split across spans is removed as a unit; that exceptional line loses its style boundaries.
+
+The `drop-cr` sanitizer in `fixtures/v1/report/compat.json` removes every carriage return. The fixture’s `reportOptions` object supplies the optional third argument to `Report`.
+
 ## Vendoring tokens and fixtures
 
 For a non-Bun implementation, copy `tokens/v1.json` and `fixtures/v1/` from an exact release tag, preserving paths. Record the tag alongside the copies. Verify each vendored file against that tag with `git show <tag>:<path>` and a SHA-256 comparison, and check the complete file list as well as the checksums. Run all fixtures in the consumer's tests.
