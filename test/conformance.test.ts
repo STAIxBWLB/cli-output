@@ -171,3 +171,10 @@ test("wrapped error next step remains executable and keeps accent styling", () =
   const script = text.map((line, index) => index ? line : line.slice(4)).join("\n");
   expect(Bun.spawnSync(["sh", "-c", script]).stdout.toString()).toBe(Bun.spawnSync(["sh", "-c", command]).stdout.toString());
 });
+
+test("explicit table widths are validated and remain fixed at narrow report widths", () => {
+  expect(() => new Report().table(["a", "b"], [["x", "y"]], 1, {widths:[3]})).toThrow("one positive integer per column");
+  expect(() => new Report().table(["a"], [["x"]], 0, {widths:[0]})).toThrow("one positive integer per column");
+  const lines = new Report(5).table(["A", "B"], [["x", "y"]], 1, {indent:0, widths:[4,4]}).render(false);
+  expect(lines).toEqual(["A     B", "x     y"]);
+});
