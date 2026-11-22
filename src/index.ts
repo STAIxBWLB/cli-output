@@ -59,11 +59,11 @@ export function terminalText(value: unknown, options: { singleLine?: boolean } =
     .replace(/\r\n?/g, "\n")
     .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\|$)/g, "")
     .replace(/\x1b[P_X^][\s\S]*?(?:\x1b\\|$)/g, "")
-    .replace(/(?:\x1b\[|)[0-?]*[ -/]*(?:[@-~]|(?=\n|$))/g, "")
+    .replace(/(?:\x1b\[|\x9b)[0-?]*[ -/]*(?:[@-~]|(?=\n|$))/g, "")
     .replace(/\x1b[^\n]?/g, "");
   return options.singleLine
-    ? text.replace(/[\x00-\x1f\x7f-]/g, " ")
-    : text.replace(/[\x00-\x08\x0b-\x1f\x7f-]/g, "");
+    ? text.replace(/[\x00-\x1f\x7f-\x9f]/g, " ")
+    : text.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "");
 }
 
 export interface Span { text: string; role?: Role }

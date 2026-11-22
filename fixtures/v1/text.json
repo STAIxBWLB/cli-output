@@ -1,17 +1,17 @@
 [
   {
     "id": "c1-complete",
-    "input": "before31mred0mafter",
+    "input": "before\u009b31mred\u009b0mafter",
     "expected": "beforeredafter"
   },
   {
     "id": "c1-incomplete",
-    "input": "before38;5;",
+    "input": "before\u009b38;5;",
     "expected": "before"
   },
   {
     "id": "c1-incomplete-line",
-    "input": "before38;5;\nafter",
+    "input": "before\u009b38;5;\nafter",
     "expected": "before\nafter"
   },
   {
@@ -39,7 +39,7 @@
   },
   {
     "id": "single-line-csi",
-    "input": "a31mb\nend",
+    "input": "a\u009b31mb\nend",
     "options": {
       "singleLine": true
     },
