@@ -1,0 +1,16 @@
+{
+  "name": "@staix/cli-output",
+  "version": "1.0.0",
+  "description": "CLI output standard v1 for Bun",
+  "type": "module",
+  "repository": { "type": "git", "url": "git+https://github.com/STAIxBWLB/cli-output.git" },
+  "exports": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": ["src", "docs/standard-v1.md", "tokens/v1.json", "fixtures/v1", "README.md", "LICENSE"],
+  "engines": { "bun": ">=1.4.4" },
+  "cliOutputStandard": "v1",
+  "scripts": { "test": "bun test", "typecheck": "tsc --noEmit", "tokens": "bun scripts/tokens.ts", "tokens:check": "bun scripts/tokens.ts --check" },
+  "devDependencies": { "@types/bun": "1.4.4", "typescript": "5.9.3" },
+  "publishConfig": { "access": "public" },
+  "license": "MIT"
+}

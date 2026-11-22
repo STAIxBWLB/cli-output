@@ -1,0 +1,131 @@
+{
+  "id": "golden-ascii",
+  "input": {
+    "columns": 80,
+    "ascii": true,
+    "operations": [
+      {
+        "op": "header",
+        "tool": "ahub",
+        "name": "Check",
+        "context": "v0.0.0  pid 1"
+      },
+      {
+        "op": "section",
+        "name": "Attention",
+        "count": "2 items"
+      },
+      {
+        "op": "bullet",
+        "marker": "fail",
+        "text": "codex-review 0.169.0 refused"
+      },
+      {
+        "op": "next",
+        "command": "ahub agents trust codex-review 0.169.0"
+      },
+      {
+        "op": "bullet",
+        "marker": "warn",
+        "text": "memory unbound"
+      },
+      {
+        "op": "section",
+        "name": "Hub"
+      },
+      {
+        "op": "kv",
+        "rows": [
+          [
+            "version",
+            "0.39.0"
+          ],
+          [
+            "pid",
+            4242
+          ],
+          [
+            "endpoint",
+            ""
+          ],
+          [
+            "a very long key that is wider than twenty eight cells",
+            "value"
+          ]
+        ]
+      },
+      {
+        "op": "section",
+        "name": "Checks"
+      },
+      {
+        "op": "bullet",
+        "marker": "ok",
+        "text": "tools: git found"
+      },
+      {
+        "op": "bullet",
+        "marker": "absent",
+        "text": "optional model not configured"
+      },
+      {
+        "op": "bullet",
+        "marker": "unknown",
+        "text": "quota not reported"
+      },
+      {
+        "op": "summary",
+        "counts": {
+          "failed": 1,
+          "warnings": 1,
+          "unknown": 1,
+          "ok": 3
+        }
+      }
+    ]
+  },
+  "plain": [
+    " ahub Check  v0.0.0  pid 1",
+    "",
+    "> Attention (2 items)",
+    "  x  codex-review 0.169.0 refused",
+    "    -> ahub agents trust codex-review 0.169.0",
+    "  !  memory unbound",
+    "",
+    "> Hub",
+    "  version:   0.39.0",
+    "  pid:       4242",
+    "  endpoint:  (unset)",
+    "  a very long key that is wider than twenty eight cells:",
+    "    value",
+    "",
+    "> Checks",
+    "  ok tools: git found",
+    "  -  optional model not configured",
+    "  ?  quota not reported",
+    "",
+    "x 1 failed  ! 1 warning  ? 1 unknown  ok 3 ok"
+  ],
+  "colored": [
+    "\u001b[1;34m ahub Check\u001b[0m\u001b[90m  v0.0.0  pid 1\u001b[0m",
+    "",
+    "\u001b[1;35m> Attention\u001b[0m\u001b[90m (2 items)\u001b[0m",
+    "  \u001b[1;31mx \u001b[0m codex-review 0.169.0 refused",
+    "    \u001b[36m-> ahub agents trust codex-review 0.169.0\u001b[0m",
+    "  \u001b[1;33m! \u001b[0m memory unbound",
+    "",
+    "\u001b[1;35m> Hub\u001b[0m",
+    "  \u001b[34mversion:\u001b[0m   0.39.0",
+    "  \u001b[34mpid:\u001b[0m       4242",
+    "  \u001b[34mendpoint:\u001b[0m  \u001b[90m(unset)\u001b[0m",
+    "\u001b[34m  a very long key that is wider than twenty eight cells:\u001b[0m",
+    "    value",
+    "",
+    "\u001b[1;35m> Checks\u001b[0m",
+    "  \u001b[1;32mok\u001b[0m tools: git found",
+    "  \u001b[90m- \u001b[0m optional model not configured",
+    "  \u001b[90m? \u001b[0m quota not reported",
+    "",
+    "\u001b[1;31mx 1 failed\u001b[0m  \u001b[1;33m! 1 warning\u001b[0m  \u001b[90m? 1 unknown\u001b[0m  \u001b[1;32mok 3 ok\u001b[0m"
+  ]
+}
