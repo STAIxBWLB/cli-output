@@ -195,6 +195,11 @@ export class Report {
   }
   /** Lines another renderer built (a table), placed as they are. A section's blank line is still added by `section()`. */
   append(lines: readonly Span[][]): this { for (const line of lines) this.push([...line]); return this; }
+  /** Append unindented wrapped text; standalone callers can use lineSpans to stream it. */
+  line(text: string): this {
+    for (const line of lineSpans(text, this.columns)) this.push(line);
+    return this;
+  }
   /** A free line in one role, indented two cells (a pointer to more detail, a note). */
   note(text: string, role: Role = "hint"): this {
     for (const line of this.fit(text, (this.columns ?? 0) - 2)) this.push([{ text: "  " }, { text: line, role }]);
@@ -250,9 +255,23 @@ export function wrap(value: unknown, columns?: number, hang = 4): string[] {
   return lines;
 }
 
+/** Unindented plain-text lines for streaming or direct painting. */
+export function lineSpans(text: string, columns?: number): Span[][] {
+  return wrap(text, columns, 0).map(line => [{ text: line }]);
+}
+
 export const EXIT = Object.freeze({ ok: 0, fail: 1, usage: 2, tempfail: 75 } as const);
-export function errorLine(tool: string, what: string, why: string, options: { next?: string; tty: boolean; ascii?: boolean }): string[] {
+export interface ErrorOptions { next?: string; tty: boolean; ascii?: boolean }
+/** Error and next-step spans for a single stream; use paint with that stream's color decision. */
+export function errorSpans(tool: string, what: string, why: string, options: ErrorOptions): Span[][] {
   const message = `${terminalText(tool)}: ${terminalText(what)}${why ? `: ${terminalText(why)}` : ""}`;
-  const first = options.tty ? `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} ${message}` : message;
-  return options.next ? [first, `  ${options.ascii ? MARKERS.next.ascii : MARKERS.next.glyph} ${terminalText(options.next)}`] : [first];
+  const lines: Span[][] = [options.tty
+    ? [{ text: `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} `, role: "error" }, { text: message }]
+    : [{ text: message }]];
+  if (options.next) lines.push([{ text: "  " }, { text: `${options.ascii ? MARKERS.next.ascii : MARKERS.next.glyph} ${terminalText(options.next)}`, role: "accent" }]);
+  return lines;
+}
+/** Plain-string compatibility form. */
+export function errorLine(tool: string, what: string, why: string, options: ErrorOptions): string[] {
+  return errorSpans(tool, what, why, options).map(line => paint(line, false));
 }

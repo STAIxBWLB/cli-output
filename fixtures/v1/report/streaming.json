@@ -1,0 +1,28 @@
+{
+  "id": "streaming-line",
+  "input": {
+    "columns": 12,
+    "ascii": false,
+    "operations": [
+      {
+        "op": "line",
+        "text": "one two three four five",
+        "lines": [
+          "one two",
+          "three four",
+          "five"
+        ]
+      }
+    ]
+  },
+  "plain": [
+    "one two",
+    "three four",
+    "five"
+  ],
+  "colored": [
+    "one two",
+    "three four",
+    "five"
+  ]
+}
