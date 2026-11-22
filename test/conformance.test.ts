@@ -14,8 +14,8 @@ for (const c of colors) test(`color ${c.id}`, () => {
 });
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
 for (const c of errors) test(`error ${c.id}`, () => {
-  expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected);
-  const spans = errorSpans(c.tool, c.what, c.why, c.options);
+  expect(errorLine(c.tool, c.what, c.why, c.options, "columns" in c ? c.columns : undefined)).toEqual(c.expected);
+  const spans = errorSpans(c.tool, c.what, c.why, c.options, "columns" in c ? c.columns : undefined);
   expect<unknown>(spans).toEqual(c.spans);
   expect(spans.map(line => paint(line, true))).toEqual(c.colored);
 });
@@ -159,4 +159,15 @@ test("span wrapping removes controls that cross span boundaries", () => {
   const lines = wrapSpans(spans, 20);
   expect(lines.map(line => paint(line, false)).join("\n")).toBe("xy");
   expect(lines.map(line => paint(line, true)).join("\n")).not.toContain("\x1b");
+});
+
+test("wrapped error next step remains executable and keeps accent styling", () => {
+  const command = `printf '%s\\n' 'two words' "other words" tail`;
+  const lines = errorSpans("tool", "failed", "missing", { tty: true, next: command }, 20);
+  const next = lines.slice(lines.findIndex(line => line.some(span => span.role === "accent")));
+  const text = next.map(line => paint(line, false));
+  expect(next.every(line => line.some(span => span.role === "accent"))).toBe(true);
+  for (const line of text) expect(cellWidth(line)).toBeLessThanOrEqual(20);
+  const script = text.map((line, index) => index ? line : line.slice(4)).join("\n");
+  expect(Bun.spawnSync(["sh", "-c", script]).stdout.toString()).toBe(Bun.spawnSync(["sh", "-c", command]).stdout.toString());
 });

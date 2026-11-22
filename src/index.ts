@@ -111,6 +111,23 @@ function commandWords(command: string): string[] {
   if (word) words.push(word);
   return words;
 }
+/** Keep shell tokens whole and mark wrapped next steps with continuations. */
+function nextStepSpans(text: string, marker: string, indent: number, columns?: number): Span[][] {
+  const prefix = " ".repeat(indent);
+  if (columns === undefined || text.includes("\n") || cellWidth(prefix + marker + text) <= columns) {
+    return [[{ text: prefix }, { text: marker + text, role: "accent" }]];
+  }
+  const words = commandWords(text), room = Math.max(1, columns - indent - cellWidth(marker));
+  if (!words.length) return [[{ text: prefix }, { text: marker + text, role: "accent" }]];
+  let line = ""; const lines: string[] = [];
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && cellWidth(candidate) > room - 2) { lines.push(line + " \\"); line = word; }
+    else line = candidate;
+  }
+  if (line) lines.push(line);
+  return lines.map((part, index) => [{ text: index ? " ".repeat(indent + cellWidth(marker)) : prefix }, { text: (index ? "" : marker) + part, role: "accent" }]);
+}
 export class Report {
   private readonly out: Span[][] = [];
   /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set. */
@@ -253,22 +270,7 @@ export class Report {
   /** `    →  <command>` in `accent`: complete and copyable, never shortened. */
   next(command: string): this {
     const text = this.clean(command), marker = `${markerCell("next", this.ascii)} `;
-    if (this.options.wrapNext === false || this.columns === undefined || text.includes("\n") || cellWidth("    " + marker + text) <= this.columns) {
-      this.push([{ text: "    " }, { text: marker + text, role: "accent" }]);
-      return this;
-    }
-    const words = commandWords(text), room = Math.max(1, this.columns - 4 - cellWidth(marker));
-    if (!words.length) { this.push([{ text: "    " }, { text: marker + text, role: "accent" }]); return this; }
-    let line = ""; const lines: string[] = [];
-    for (const word of words) {
-      const candidate = line ? `${line} ${word}` : word;
-      if (line && cellWidth(candidate) > room - 2) { lines.push(line + " \\"); line = word; }
-      else line = candidate;
-    }
-    if (line) lines.push(line);
-    for (const [index, part] of lines.entries()) {
-      this.push([{ text: index ? " ".repeat(4 + cellWidth(marker)) : "    " }, { text: (index ? "" : marker) + part, role: "accent" }]);
-    }
+    for (const line of nextStepSpans(text, marker, 4, this.options.wrapNext === false ? undefined : this.columns)) this.push(line);
     return this;
   }
   /** The last line of a check command: `✗ 2 failed  ⚠ 3 warnings  ✓ 18 ok`, zero counts omitted, unknowns as `? 2 unknown`. */
@@ -356,15 +358,16 @@ export function lineSpans(text: string, columns?: number): Span[][] {
 export const EXIT = Object.freeze({ ok: 0, fail: 1, usage: 2, tempfail: 75 } as const);
 export interface ErrorOptions { next?: string; tty: boolean; ascii?: boolean }
 /** Error and next-step spans for a single stream; use paint with that stream's color decision. */
-export function errorSpans(tool: string, what: string, why: string, options: ErrorOptions): Span[][] {
+export function errorSpans(tool: string, what: string, why: string, options: ErrorOptions, columns?: number): Span[][] {
   const message = `${terminalText(tool)}: ${terminalText(what)}${why ? `: ${terminalText(why)}` : ""}`;
-  const lines: Span[][] = [options.tty
-    ? [{ text: `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} `, role: "error" }, { text: message }]
-    : [{ text: message }]];
-  if (options.next) lines.push([{ text: "  " }, { text: `${options.ascii ? MARKERS.next.ascii : MARKERS.next.glyph} ${terminalText(options.next)}`, role: "accent" }]);
+  const first: Span[] = options.tty
+    ? [{ text: `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} `, role: MARKERS.fail.role }, { text: message }]
+    : [{ text: message }];
+  const lines = columns === undefined ? [first] : wrapSpans(first, columns, 0);
+  if (options.next) lines.push(...nextStepSpans(terminalText(options.next), `${options.ascii ? MARKERS.next.ascii : MARKERS.next.glyph} `, 2, columns));
   return lines;
 }
 /** Plain-string compatibility form. */
-export function errorLine(tool: string, what: string, why: string, options: ErrorOptions): string[] {
-  return errorSpans(tool, what, why, options).map(line => paint(line, false));
+export function errorLine(tool: string, what: string, why: string, options: ErrorOptions, columns?: number): string[] {
+  return errorSpans(tool, what, why, options, columns).map(line => paint(line, false));
 }

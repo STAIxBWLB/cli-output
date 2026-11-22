@@ -131,5 +131,171 @@
       "tool: failed: missing",
       "  \u001b[36m→ tool setup\u001b[0m"
     ]
+  },
+  {
+    "id": "tty-width",
+    "tool": "tool",
+    "what": "failed to open the resource",
+    "why": "access denied",
+    "options": {
+      "tty": true,
+      "next": "tool setup --full-option"
+    },
+    "columns": 20,
+    "expected": [
+      "✗ tool: failed to",
+      "open the resource:",
+      "access denied",
+      "  → tool setup \\",
+      "    --full-option"
+    ],
+    "spans": [
+      [
+        {
+          "text": "✗ ",
+          "role": "error"
+        },
+        {
+          "text": "tool: failed to"
+        }
+      ],
+      [
+        {
+          "text": "open the resource:"
+        }
+      ],
+      [
+        {
+          "text": "access denied"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "→ tool setup \\",
+          "role": "accent"
+        }
+      ],
+      [
+        {
+          "text": "    "
+        },
+        {
+          "text": "--full-option",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[1;31m✗ \u001b[0mtool: failed to",
+      "open the resource:",
+      "access denied",
+      "  \u001b[36m→ tool setup \\\u001b[0m",
+      "    \u001b[36m--full-option\u001b[0m"
+    ]
+  },
+  {
+    "id": "pipe-width",
+    "tool": "tool",
+    "what": "failed to open the resource",
+    "why": "access denied",
+    "options": {
+      "tty": false
+    },
+    "columns": 20,
+    "expected": [
+      "tool: failed to open",
+      "the resource: access",
+      "denied"
+    ],
+    "spans": [
+      [
+        {
+          "text": "tool: failed to open"
+        }
+      ],
+      [
+        {
+          "text": "the resource: access"
+        }
+      ],
+      [
+        {
+          "text": "denied"
+        }
+      ]
+    ],
+    "colored": [
+      "tool: failed to open",
+      "the resource: access",
+      "denied"
+    ]
+  },
+  {
+    "id": "ascii-next-wrapped",
+    "tool": "tool",
+    "what": "failed",
+    "why": "missing",
+    "options": {
+      "tty": false,
+      "ascii": true,
+      "next": "printf '%s' 'two words' tail"
+    },
+    "columns": 20,
+    "spans": [
+      [
+        {
+          "text": "tool: failed:"
+        }
+      ],
+      [
+        {
+          "text": "missing"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "-> printf '%s' \\",
+          "role": "accent"
+        }
+      ],
+      [
+        {
+          "text": "     "
+        },
+        {
+          "text": "'two words' \\",
+          "role": "accent"
+        }
+      ],
+      [
+        {
+          "text": "     "
+        },
+        {
+          "text": "tail",
+          "role": "accent"
+        }
+      ]
+    ],
+    "expected": [
+      "tool: failed:",
+      "missing",
+      "  -> printf '%s' \\",
+      "     'two words' \\",
+      "     tail"
+    ],
+    "colored": [
+      "tool: failed:",
+      "missing",
+      "  \u001b[36m-> printf '%s' \\\u001b[0m",
+      "     \u001b[36m'two words' \\\u001b[0m",
+      "     \u001b[36mtail\u001b[0m"
+    ]
   }
 ]
