@@ -1,0 +1,60 @@
+{
+  "id": "table-compatibility-options",
+  "input": {
+    "columns": 80,
+    "ascii": false,
+    "styles": {
+      "peer": "\u001b[35m"
+    },
+    "operations": [
+      {
+        "op": "table",
+        "head": [
+          "Name",
+          "State",
+          "Extra"
+        ],
+        "rows": [
+          [
+            {
+              "text": "worker",
+              "style": "peer"
+            },
+            {
+              "text": "ready",
+              "role": "success"
+            },
+            ""
+          ],
+          [
+            "second",
+            "",
+            ""
+          ]
+        ],
+        "flexible": 1,
+        "options": {
+          "indent": 0,
+          "dropEmptyColumns": false,
+          "headerCase": "preserve",
+          "emptyCell": "blank",
+          "widths": [
+            8,
+            6,
+            5
+          ]
+        }
+      }
+    ]
+  },
+  "plain": [
+    "Name      State   Extra",
+    "worker    ready   ",
+    "second            "
+  ],
+  "colored": [
+    "\u001b[34mName    \u001b[0m  \u001b[34mState \u001b[0m  \u001b[34mExtra\u001b[0m",
+    "\u001b[35mworker  \u001b[0m  \u001b[1;32mready \u001b[0m  ",
+    "second            "
+  ]
+}
