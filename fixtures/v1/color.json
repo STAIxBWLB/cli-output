@@ -1,0 +1,16 @@
+[
+  {"id":"flag-never","flag":"never","env":{"isTTY":true,"FORCE_COLOR":"1"},"expected":false},
+  {"id":"flag-always","flag":"always","env":{"isTTY":false,"NO_COLOR":"1","TERM":"dumb"},"expected":true},
+  {"id":"no-color","flag":"auto","env":{"isTTY":true,"NO_COLOR":"1","FORCE_COLOR":"1"},"expected":false},
+  {"id":"no-color-empty","env":{"isTTY":true,"NO_COLOR":""},"expected":true},
+  {"id":"force-pipe","env":{"isTTY":false,"FORCE_COLOR":"1"},"expected":true},
+  {"id":"clicolor-force-pipe","env":{"isTTY":false,"CLICOLOR_FORCE":"1"},"expected":true},
+  {"id":"force-dumb","env":{"isTTY":false,"TERM":"dumb","FORCE_COLOR":"1"},"expected":true},
+  {"id":"force-empty","env":{"isTTY":false,"FORCE_COLOR":""},"expected":false},
+  {"id":"force-zero","env":{"isTTY":true,"FORCE_COLOR":"0"},"expected":false},
+  {"id":"clicolor-zero","env":{"isTTY":true,"CLICOLOR":"0"},"expected":false},
+  {"id":"force-over-zero","env":{"isTTY":false,"FORCE_COLOR":"0","CLICOLOR_FORCE":"1"},"expected":true},
+  {"id":"tty","env":{"isTTY":true,"TERM":"xterm"},"expected":true},
+  {"id":"dumb","env":{"isTTY":true,"TERM":"dumb"},"expected":false},
+  {"id":"pipe","env":{"isTTY":false},"expected":false}
+]

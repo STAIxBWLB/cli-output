@@ -1,0 +1,10 @@
+[
+  {"id":"ok","name":"ok","utf8":"✓ ","ascii":"ok"},
+  {"id":"fail","name":"fail","utf8":"✗ ","ascii":"x "},
+  {"id":"warn","name":"warn","utf8":"⚠ ","ascii":"! "},
+  {"id":"absent","name":"absent","utf8":"- ","ascii":"- "},
+  {"id":"unknown","name":"unknown","utf8":"? ","ascii":"? "},
+  {"id":"pending","name":"pending","utf8":"~ ","ascii":"~ "},
+  {"id":"active","name":"active","utf8":"* ","ascii":"* "},
+  {"id":"next","name":"next","utf8":"→ ","ascii":"->"}
+]

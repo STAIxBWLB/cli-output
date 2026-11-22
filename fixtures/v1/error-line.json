@@ -1,0 +1,5 @@
+[
+  {"id":"tty","tool":"tool","what":"failed","why":"missing","options":{"tty":true,"next":"tool setup"},"expected":["✗ tool: failed: missing","  → tool setup"]},
+  {"id":"pipe","tool":"tool","what":"failed","why":"missing","options":{"tty":false},"expected":["tool: failed: missing"]},
+  {"id":"ascii","tool":"tool","what":"failed","why":"missing","options":{"tty":true,"ascii":true,"next":"tool setup"},"expected":["x tool: failed: missing","  -> tool setup"]}
+]

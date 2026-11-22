@@ -1,0 +1,1 @@
+{"id":"basic","input":{"tool":"tool","title":"Check","section":"Checks","marker":"ok","text":"ready"},"plain":[" tool Check","","▸ Checks","  ✓  ready","","✓ 1 ok"],"colored":["\u001b[1;34m tool Check\u001b[0m","","\u001b[1;35m▸ Checks\u001b[0m","  \u001b[1;32m✓ \u001b[0m ready","","\u001b[1;32m✓ 1 ok\u001b[0m"]}
