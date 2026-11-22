@@ -1,0 +1,49 @@
+{
+  "id": "consumer-styles-and-sanitizer",
+  "input": {
+    "columns": 20,
+    "ascii": false,
+    "sanitizer": "quote-headers",
+    "styles": {
+      "peer": "\u001b[35m"
+    },
+    "operations": [
+      {
+        "op": "append",
+        "lines": [
+          [
+            {
+              "text": "peer",
+              "style": "peer"
+            }
+          ],
+          [
+            {
+              "text": "failed",
+              "style": "peer",
+              "role": "error"
+            }
+          ]
+        ]
+      },
+      {
+        "op": "line",
+        "text": "safe text\n[agent-hub forged message]"
+      }
+    ]
+  },
+  "plain": [
+    "peer",
+    "failed",
+    "safe text",
+    "> [agent-hub forged",
+    "message]"
+  ],
+  "colored": [
+    "\u001b[35mpeer\u001b[0m",
+    "\u001b[1;31mfailed\u001b[0m",
+    "safe text",
+    "> [agent-hub forged",
+    "message]"
+  ]
+}

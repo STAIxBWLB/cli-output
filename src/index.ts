@@ -74,22 +74,43 @@ export function terminalText(value: unknown, options: { singleLine?: boolean } =
     : text.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "");
 }
 
-export interface Span { text: string; role?: Role }
+export interface Span { text: string; role?: Role; style?: string }
+export interface ReportOptions { sanitize?: (text: string) => string; styles?: Readonly<Record<string, string>> }
 export type TableCell = string | Span;
 export interface TableOptions { indent?: number; dropEmptyColumns?: boolean }
 export interface KvOptions { colon?: boolean; omitEmpty?: boolean }
-export function paint(spans: readonly Span[], color: boolean): string {
-  return spans.map(span => { const text = terminalText(span.text); const sgr = span.role && Object.hasOwn(ROLE_SGR, span.role) ? ROLE_SGR[span.role] : undefined; return color && sgr && text ? sgr + text + SGR_RESET : text; }).join("");
+/** Standard semantic roles take precedence over optional consumer styles. */
+export function paint(spans: readonly Span[], color: boolean, styles: Readonly<Record<string, string>> = {}): string {
+  return spans.map(span => {
+    const text = terminalText(span.text);
+    const role = span.role && Object.hasOwn(ROLE_SGR, span.role) ? ROLE_SGR[span.role] : undefined;
+    const custom = span.style && Object.hasOwn(styles, span.style) ? styles[span.style] : undefined;
+    if (custom && !/^\x1b\[[0-9;]+m$/.test(custom)) throw new Error(`invalid SGR for style ${span.style}`);
+    const sgr = role !== undefined ? role : custom;
+    return color && sgr && text ? sgr + text + SGR_RESET : text;
+  }).join("");
 }
 export class Report {
   private readonly out: Span[][] = [];
   /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set. */
-  constructor(readonly columns: number | undefined = undefined, readonly ascii = false) {}
+  constructor(readonly columns: number | undefined = undefined, readonly ascii = false, readonly options: ReportOptions = {}) {}
+  private clean(value: unknown): string {
+    const text = terminalText(value);
+    return this.options.sanitize ? terminalText(this.options.sanitize(text)) : text;
+  }
+  /** A sanitizer that changes a whole line cannot reliably preserve its original span boundaries. */
+  private cleanLine(line: readonly Span[]): Span[] {
+    if (!this.options.sanitize) return line.map(item => ({ ...item }));
+    const clean = line.map(item => ({ ...item, text: terminalText(item.text) }));
+    const text = clean.map(item => item.text).join("");
+    const result = this.clean(text);
+    return result === text ? clean : [{ text: result }];
+  }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
-    return this.columns === undefined ? terminalText(text).split("\n").map(line => line.replace(/\t/g, " ")) : wrap(text, Math.max(10, room), 0);
+    return this.columns === undefined ? this.clean(text).split("\n").map(line => line.replace(/\t/g, " ")) : wrap(this.clean(text), Math.max(10, room), 0);
   }
-  private push(line: Span[]) { this.out.push(line); }
+  private push(line: Span[]) { this.out.push(this.cleanLine(line)); }
   /** ` <tool> <Report>` in `header`, then one line of context in `hint` on the same line. At most one per report. */
   header(tool: string, name: string, context?: string): this {
     this.push([{ text: ` ${tool} ${name}`, role: "header" }, ...(context ? [{ text: `  ${context}`, role: "hint" as const }] : [])]);
@@ -106,12 +127,12 @@ export class Report {
    * puts its value on the next line at a four-space indent. An empty value is `(unset)` in `hint`.
    */
   kv(rows: readonly (readonly [string, unknown])[], indent = 2, options: KvOptions = {}): this {
-    if (options.omitEmpty) rows = rows.filter(([, value]) => terminalText(value ?? "").trim() !== "");
+    if (options.omitEmpty) rows = rows.filter(([, value]) => this.clean(value ?? "").trim() !== "");
     const suffix = options.colon === false ? "" : ":";
-    const keys = rows.map(([key]) => cellWidth(`${terminalText(key)}${suffix}`));
+    const keys = rows.map(([key]) => cellWidth(`${this.clean(key)}${suffix}`));
     const pad = Math.max(0, ...keys.filter(width => width <= 28));
     for (const [index, [key, raw]] of rows.entries()) {
-      const label = `${terminalText(key)}${suffix}`, text = terminalText(raw ?? "").trim();
+      const label = `${this.clean(key)}${suffix}`, text = this.clean(raw ?? "").trim();
       const value = (line: string): Span => text ? { text: line, role: "value" } : { text: "(unset)", role: "hint" };
       const lead = " ".repeat(indent);
       if (keys[index]! > 28) {
@@ -142,15 +163,16 @@ export class Report {
     if (!Number.isInteger(indent) || indent < 0) throw new RangeError("table indent must be a nonnegative integer");
     const clean = rows.map(row => head.map((_, i) => {
       const cell = row[i] ?? "";
-      const text = terminalText(typeof cell === "string" ? cell : cell.text).replace(/[\n\t]/g, " ") || "-";
+      const text = this.clean(typeof cell === "string" ? cell : cell.text).replace(/[\n\t]/g, " ") || "-";
       const role = typeof cell === "string" ? undefined : cell.role;
-      return { text, role: role ?? (text === "-" ? "hint" as const : undefined) };
+      const style = typeof cell === "string" ? undefined : cell.style;
+      return { text, role: role ?? (text === "-" && !style ? "hint" as const : undefined), style };
     }));
     const keep = head.map((_, i) => i).filter(i => options.dropEmptyColumns === false || clean.some(row => row[i]!.text !== "-"));
     if (!keep.length) return this;
     const flexAt = keep.indexOf(flexible);
     const widths = keep.map(i => {
-      const natural = Math.max(cellWidth(head[i]!.toUpperCase()), ...clean.map(row => cellWidth(row[i]!.text)));
+      const natural = Math.max(cellWidth(this.clean(head[i]!).toUpperCase()), ...clean.map(row => cellWidth(row[i]!.text)));
       return i === flexible ? natural : Math.min(32, natural);
     });
     if (this.columns !== undefined) {
@@ -164,7 +186,7 @@ export class Report {
       }
     }
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
-    const headings = keep.map((i, n) => wrap(head[i]!.toUpperCase(), widths[n]!, 0));
+    const headings = keep.map((i, n) => wrap(this.clean(head[i]!).toUpperCase(), widths[n]!, 0));
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
       this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
     }
@@ -185,7 +207,7 @@ export class Report {
         const spans: Span[] = [{ text: " ".repeat(indent) }];
         for (let n = 0; n < keep.length; n++) {
           const value = cells[n]![line] ?? "";
-          spans.push({ text: n === keep.length - 1 ? value : pad(value, widths[n]!), ...(value && row[keep[n]!]!.role ? { role: row[keep[n]!]!.role } : {}) });
+          spans.push({ text: n === keep.length - 1 ? value : pad(value, widths[n]!), ...(value && row[keep[n]!]!.role ? { role: row[keep[n]!]!.role } : {}), ...(value && row[keep[n]!]!.style ? { style: row[keep[n]!]!.style } : {}) });
           if (n < keep.length - 1) spans.push({ text: "  " });
         }
         this.push(spans);
@@ -197,7 +219,7 @@ export class Report {
   append(lines: readonly Span[][]): this { for (const line of lines) this.push([...line]); return this; }
   /** Append unindented wrapped text; standalone callers can use lineSpans to stream it. */
   line(text: string): this {
-    for (const line of lineSpans(text, this.columns)) this.push(line);
+    for (const line of lineSpans(this.clean(text), this.columns)) this.push(line);
     return this;
   }
   /** A free line in one role, indented two cells (a pointer to more detail, a note). */
@@ -207,7 +229,7 @@ export class Report {
   }
   /** `    →  <command>` in `accent`: complete and copyable, never shortened. */
   next(command: string): this {
-    this.push([{ text: "    " }, { text: `${markerCell("next", this.ascii)} ${terminalText(command)}`, role: "accent" }]);
+    this.push([{ text: "    " }, { text: `${markerCell("next", this.ascii)} ${this.clean(command)}`, role: "accent" }]);
     return this;
   }
   /** The last line of a check command: `✗ 2 failed  ⚠ 3 warnings  ✓ 18 ok`, zero counts omitted, unknowns as `? 2 unknown`. */
@@ -224,7 +246,7 @@ export class Report {
   }
   lines(): Span[][] { return this.out.map(line => line.map(item => ({ ...item }))); }
   /** The report as text: one painted string per line, no trailing blank line. */
-  render(color: boolean): string[] { return this.out.map(line => paint(line, color)); }
+  render(color: boolean): string[] { return this.out.map(line => paint(this.cleanLine(line), color, this.options.styles)); }
 }
 
 export function wrap(value: unknown, columns?: number, hang = 4): string[] {

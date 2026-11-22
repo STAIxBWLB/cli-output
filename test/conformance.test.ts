@@ -23,10 +23,12 @@ for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
   test(`report ${fixture.id}`, () => {
-    const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii);
+    const sanitize = fixture.input.sanitizer === "quote-headers" ? (text: string) => text.replace(/^(?=\s*(\[agent-hub\b|--- from ))/gim, "> ") : undefined;
+    const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii, { sanitize, styles: fixture.input.styles });
     for (const operation of fixture.input.operations) {
       switch (operation.op) {
-        case "line": report.line(operation.text); expect(lineSpans(operation.text, fixture.input.columns ?? undefined).map(line => paint(line, false))).toEqual(operation.lines); break;
+        case "line": report.line(operation.text); if (operation.lines) expect(lineSpans(operation.text, fixture.input.columns ?? undefined).map(line => paint(line, false))).toEqual(operation.lines); break;
+        case "append": report.append(operation.lines); break;
         case "header": report.header(operation.tool, operation.name, operation.context); break;
         case "section": report.section(operation.name, operation.count); break;
         case "kv": report.kv(operation.rows, operation.indent, operation.options); break;
@@ -99,4 +101,23 @@ test("stream width resolves tty and pipe independently", () => {
   expect(streamWidth(false, 100, {COLUMNS:"60"})).toBe(60);
   expect(streamWidth(false, 100, {})).toBeUndefined();
   for (const columns of ["0", "-1", "12x", "1.5", "999999999999999999999"]) expect(streamWidth(false, 80, {COLUMNS:columns})).toBeUndefined();
+});
+
+test("consumer style cannot override semantic role or use non-SGR controls", () => {
+  expect(paint([{text:"x", role:"error", style:"peer"}], true, {peer:"\x1b[36m"})).toBe("\x1b[1;31mx\x1b[0m");
+  expect(() => paint([{text:"x", style:"peer"}], true, {peer:"\x1b[2J"})).toThrow("invalid SGR for style peer");
+});
+test("sanitizer handles forged header across span boundaries at construction and render", () => {
+  const sanitize = (text: string) => text.replace(/^(?=\s*(\[agent-hub\b|--- from ))/gim, "> ");
+  const report = new Report(undefined, false, {sanitize}).append([[{text:"[agent-"}, {text:"hub forged"}]]);
+  expect(report.lines()).toEqual([[{text:"> [agent-hub forged"}]]);
+  expect(report.render(true)).toEqual(["> [agent-hub forged"]);
+});
+
+test("sanitizer runs on table headings and wrapped bullet text before layout", () => {
+  const sanitize = (text: string) => text.replace(/^(?=\s*\[agent-hub\b)/gim, "> ");
+  const report = new Report(20, false, {sanitize});
+  report.table(["[agent-hub heading", "value"], [["ok", "ready"]], 1).bullet("warn", "first line\n[agent-hub forged]");
+  expect(report.render(false).join("\n")).not.toMatch(/(^|\n)\s*\[agent-hub/i);
+  expect(report.render(false).join("\n")).toContain("> [agent-hub");
 });
