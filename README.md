@@ -1,6 +1,6 @@
 # @staix/cli-output
 
-CLI output standard v1 for Bun 1.4.4 or later. The package has no runtime dependencies. See [the standard](docs/standard-v1.md) for the output contract.
+CLI output standard v1 for Bun 1.4.2 or later. The package has no runtime dependencies. CI runs the test suite on Bun 1.4.2 and 1.4.4. See [the standard](docs/standard-v1.md) for the output contract.
 
 ```ts
 import { Report, resolveColor, streamEnv } from "@staix/cli-output";
