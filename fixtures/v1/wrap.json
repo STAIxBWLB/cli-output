@@ -1,0 +1,29 @@
+[
+  {
+    "id": "unbounded",
+    "input": "one two three",
+    "expected": [
+      "one two three"
+    ]
+  },
+  {
+    "id": "combining",
+    "input": "áb",
+    "columns": 1,
+    "hang": 0,
+    "expected": [
+      "á",
+      "b"
+    ]
+  },
+  {
+    "id": "emoji-zwj",
+    "input": "👩‍💻x",
+    "columns": 2,
+    "hang": 0,
+    "expected": [
+      "👩‍💻",
+      "x"
+    ]
+  }
+]

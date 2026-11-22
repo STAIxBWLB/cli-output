@@ -1,10 +1,11 @@
 import { expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
-import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, type MarkerName } from "../src/index.ts";
+import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, streamWidth, type MarkerName } from "../src/index.ts";
 import colors from "../fixtures/v1/color.json";
 import markers from "../fixtures/v1/markers.json";
 import errors from "../fixtures/v1/error-line.json";
 import texts from "../fixtures/v1/text.json";
+import wraps from "../fixtures/v1/wrap.json";
 for (const c of colors) test(`color ${c.id}`, () => {
   const actual = resolveColor(c.flag, c.env, "tool");
   if ("expectedError" in c) expect(actual).toEqual(new Error(c.expectedError));
@@ -13,6 +14,7 @@ for (const c of colors) test(`color ${c.id}`, () => {
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
 for (const c of errors) test(`error ${c.id}`, () => expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected));
 for (const c of texts) test(`text ${c.id}`, () => expect(terminalText(c.input, c.options)).toBe(c.expected));
+for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns, c.hang)).toEqual(c.expected));
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
   test(`report ${fixture.id}`, () => {
@@ -21,10 +23,10 @@ for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url
       switch (operation.op) {
         case "header": report.header(operation.tool, operation.name, operation.context); break;
         case "section": report.section(operation.name, operation.count); break;
-        case "kv": report.kv(operation.rows); break;
+        case "kv": report.kv(operation.rows, operation.indent, operation.options); break;
         case "bullet": report.bullet(operation.marker, operation.text, operation.nested); break;
         case "next": report.next(operation.command); break;
-        case "table": report.table(operation.head, operation.rows, operation.flexible); break;
+        case "table": report.table(operation.head, operation.rows, operation.flexible, operation.options); break;
         case "summary": report.summary(operation.counts); break;
         default: throw new Error(`Unknown operation: ${operation.op}`);
       }
@@ -84,4 +86,11 @@ test("table respects unbounded pipes and constrained widths", () => {
     for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(width);
     expect(lines.length).toBeLessThan(10);
   }
+});
+
+test("stream width resolves tty and pipe independently", () => {
+  expect(streamWidth(true, 100, {COLUMNS:"60"})).toBe(100);
+  expect(streamWidth(false, 100, {COLUMNS:"60"})).toBe(60);
+  expect(streamWidth(false, 100, {})).toBeUndefined();
+  for (const columns of ["0", "-1", "12x", "1.5", "999999999999999999999"]) expect(streamWidth(false, 80, {COLUMNS:columns})).toBeUndefined();
 });

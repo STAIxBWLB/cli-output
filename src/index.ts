@@ -48,6 +48,14 @@ export function resolveColor(flag: string | undefined, env: ColorEnv, tool: stri
   if (env.FORCE_COLOR === "0" || env.CLICOLOR === "0") return false;
   return env.isTTY && env.TERM !== "dumb";
 }
+/** Resolve wrapping width for one stream; pipes use only a valid COLUMNS value. */
+export function streamWidth(isTTY: boolean, columns?: number, env: Readonly<Record<string, string | undefined>> = process.env): number | undefined {
+  if (isTTY && Number.isInteger(columns) && columns! > 0) return columns;
+  const value = env.COLUMNS;
+  if (!value || !/^[1-9][0-9]*$/.test(value)) return undefined;
+  const width = Number(value);
+  return Number.isSafeInteger(width) ? width : undefined;
+}
 /** ASCII markers when `--ascii` is given or the locale (`LC_ALL`, then `LC_CTYPE`, then `LANG`) is not UTF-8. */
 export function asciiMarkers(env: Readonly<Record<string, string | undefined>> = process.env, flag = false): boolean {
   return flag || !/utf-?8/i.test(env.LC_ALL || env.LC_CTYPE || env.LANG || "");
@@ -67,6 +75,9 @@ export function terminalText(value: unknown, options: { singleLine?: boolean } =
 }
 
 export interface Span { text: string; role?: Role }
+export type TableCell = string | Span;
+export interface TableOptions { indent?: number; dropEmptyColumns?: boolean }
+export interface KvOptions { colon?: boolean; omitEmpty?: boolean }
 export function paint(spans: readonly Span[], color: boolean): string {
   return spans.map(span => { const text = terminalText(span.text); const sgr = span.role && Object.hasOwn(ROLE_SGR, span.role) ? ROLE_SGR[span.role] : undefined; return color && sgr && text ? sgr + text + SGR_RESET : text; }).join("");
 }
@@ -94,11 +105,13 @@ export class Report {
    * Key/value rows of one section: two-space indent, `Key:` padded to the widest key, two spaces, value. A key wider than 28 cells
    * puts its value on the next line at a four-space indent. An empty value is `(unset)` in `hint`.
    */
-  kv(rows: readonly (readonly [string, unknown])[], indent = 2): this {
-    const keys = rows.map(([key]) => cellWidth(`${terminalText(key)}:`));
+  kv(rows: readonly (readonly [string, unknown])[], indent = 2, options: KvOptions = {}): this {
+    if (options.omitEmpty) rows = rows.filter(([, value]) => terminalText(value ?? "").trim() !== "");
+    const suffix = options.colon === false ? "" : ":";
+    const keys = rows.map(([key]) => cellWidth(`${terminalText(key)}${suffix}`));
     const pad = Math.max(0, ...keys.filter(width => width <= 28));
     for (const [index, [key, raw]] of rows.entries()) {
-      const label = `${terminalText(key)}:`, text = terminalText(raw ?? "").trim();
+      const label = `${terminalText(key)}${suffix}`, text = terminalText(raw ?? "").trim();
       const value = (line: string): Span => text ? { text: line, role: "value" } : { text: "(unset)", role: "hint" };
       const lead = " ".repeat(indent);
       if (keys[index]! > 28) {
@@ -122,19 +135,26 @@ export class Report {
     return this;
   }
   /** Render a table. The flexible column wraps; other columns are capped at 32 cells. */
-  table(head: readonly string[], rows: readonly (readonly string[])[], flexible = head.length - 1): this {
+  table(head: readonly string[], rows: readonly (readonly TableCell[])[], flexible = head.length - 1, options: TableOptions = {}): this {
     if (!head.length) return this;
     if (flexible < 0 || flexible >= head.length) throw new RangeError(`flexible column ${flexible} must be between 0 and ${head.length - 1}`);
-    const clean = rows.map(row => head.map((_, i) => terminalText(row[i] ?? "").replace(/[\n\t]/g, " ") || "-"));
-    const keep = head.map((_, i) => i).filter(i => clean.some(row => row[i] !== "-"));
+    const indent = options.indent ?? 2;
+    if (!Number.isInteger(indent) || indent < 0) throw new RangeError("table indent must be a nonnegative integer");
+    const clean = rows.map(row => head.map((_, i) => {
+      const cell = row[i] ?? "";
+      const text = terminalText(typeof cell === "string" ? cell : cell.text).replace(/[\n\t]/g, " ") || "-";
+      const role = typeof cell === "string" ? undefined : cell.role;
+      return { text, role: role ?? (text === "-" ? "hint" as const : undefined) };
+    }));
+    const keep = head.map((_, i) => i).filter(i => options.dropEmptyColumns === false || clean.some(row => row[i]!.text !== "-"));
     if (!keep.length) return this;
     const flexAt = keep.indexOf(flexible);
     const widths = keep.map(i => {
-      const natural = Math.max(cellWidth(head[i]!.toUpperCase()), ...clean.map(row => cellWidth(row[i]!)));
+      const natural = Math.max(cellWidth(head[i]!.toUpperCase()), ...clean.map(row => cellWidth(row[i]!.text)));
       return i === flexible ? natural : Math.min(32, natural);
     });
     if (this.columns !== undefined) {
-      const available = Math.max(keep.length, this.columns - 2 - 2 * (keep.length - 1));
+      const available = Math.max(keep.length, this.columns - indent - 2 * (keep.length - 1));
       const minimum = flexAt >= 0 ? Math.min(10, Math.max(1, available - (keep.length - 1))) : 1;
       if (flexAt >= 0) widths[flexAt] = Math.max(minimum, Math.min(widths[flexAt]!, available - widths.reduce((sum, width, i) => sum + (i === flexAt ? 0 : width), 0)));
       while (widths.reduce((sum, width) => sum + width, 0) > available) {
@@ -146,11 +166,11 @@ export class Report {
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
     const headings = keep.map((i, n) => wrap(head[i]!.toUpperCase(), widths[n]!, 0));
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
-      this.push([{ text: "  " }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
+      this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
     }
     for (const row of clean) {
       const cells = keep.map((i, n) => {
-        const value = row[i]!, width = Math.max(1, widths[n]!);
+        const value = row[i]!.text, width = Math.max(1, widths[n]!);
         if (i !== flexible && value.includes("/") && cellWidth(value) > width && width > 3) {
           let left = "", right = "";
           const chars = [...value];
@@ -162,10 +182,10 @@ export class Report {
       });
       const height = Math.max(...cells.map(cell => cell.length));
       for (let line = 0; line < height; line++) {
-        const spans: Span[] = [{ text: "  " }];
+        const spans: Span[] = [{ text: " ".repeat(indent) }];
         for (let n = 0; n < keep.length; n++) {
           const value = cells[n]![line] ?? "";
-          spans.push({ text: n === keep.length - 1 ? value : pad(value, widths[n]!), ...(value === "-" ? { role: "hint" as const } : {}) });
+          spans.push({ text: n === keep.length - 1 ? value : pad(value, widths[n]!), ...(value && row[keep[n]!]!.role ? { role: row[keep[n]!]!.role } : {}) });
           if (n < keep.length - 1) spans.push({ text: "  " });
         }
         this.push(spans);
@@ -202,7 +222,9 @@ export class Report {
   render(color: boolean): string[] { return this.out.map(line => paint(line, color)); }
 }
 
-export function wrap(value: unknown, columns: number, hang = 4): string[] {
+export function wrap(value: unknown, columns?: number, hang = 4): string[] {
+  if (columns === undefined) return terminalText(value).replace(/\t/g, " ").split("\n");
+  if (!Number.isFinite(columns) || columns < 1) throw new RangeError("wrap columns must be positive");
   const lines: string[] = [];
   const half = Math.floor(columns / 2);
   const width = cellWidth;
@@ -218,7 +240,7 @@ export function wrap(value: unknown, columns: number, hang = 4): string[] {
       if (width(line + token) <= columns) { line += token; continue; }
       if (line !== start) push();
       if (/^\s/.test(token)) continue;
-      for (const char of token) {
+      for (const { segment: char } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(token)) {
         if (line !== start && width(line + char) > columns) push();
         line += char;
       }
