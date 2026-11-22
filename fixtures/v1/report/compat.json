@@ -1,0 +1,30 @@
+{
+  "id": "compat-options",
+  "input": {
+    "columns": 20,
+    "ascii": false,
+    "sanitizer": "drop-cr",
+    "reportOptions": {
+      "wrapNext": false,
+      "sanitizeFirst": true
+    },
+    "operations": [
+      {
+        "op": "line",
+        "text": "a\rb"
+      },
+      {
+        "op": "next",
+        "command": "tool command with many arguments and spaces"
+      }
+    ]
+  },
+  "plain": [
+    "ab",
+    "    →  tool command with many arguments and spaces"
+  ],
+  "colored": [
+    "ab",
+    "    \u001b[36m→  tool command with many arguments and spaces\u001b[0m"
+  ]
+}

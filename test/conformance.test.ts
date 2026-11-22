@@ -23,8 +23,9 @@ for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
   test(`report ${fixture.id}`, () => {
-    const sanitize = fixture.input.sanitizer === "quote-headers" ? (text: string) => text.replace(/^(?=\s*(\[agent-hub\b|--- from ))/gim, "> ") : undefined;
-    const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii, { sanitize, styles: fixture.input.styles });
+    const sanitize = fixture.input.sanitizer === "quote-headers" ? (text: string) => text.replace(/^(?=\s*(\[agent-hub\b|--- from ))/gim, "> ")
+      : fixture.input.sanitizer === "drop-cr" ? (text: string) => text.replace(/\r/g, "") : undefined;
+    const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii, { sanitize, styles: fixture.input.styles, ...fixture.input.reportOptions });
     for (const operation of fixture.input.operations) {
       switch (operation.op) {
         case "line": report.line(operation.text); if (operation.lines) expect(lineSpans(operation.text, fixture.input.columns ?? undefined).map(line => paint(line, false))).toEqual(operation.lines); break;
@@ -135,4 +136,14 @@ test("next-step continuation preserves shell arguments and leaves long tokens wh
     expect(lines.join("\n")).toContain("fingerprint-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
   }
   expect(new Report().next(command).render(false)).toEqual([`    →  ${command}`]);
+});
+
+test("consumer-first sanitizer cannot inject terminal controls", () => {
+  const report = new Report(undefined, false, { sanitizeFirst: true, sanitize: text => text + "\x1b[31m" });
+  expect(report.line("hello").render(false)).toEqual(["hello"]);
+});
+test("consumer-first policy applies to assembled header and appended spans", () => {
+  const sanitize = (text: string) => text.replace(/\r/g, "");
+  const report = new Report(undefined, false, { sanitizeFirst: true, sanitize }).header("tool", "a\rb").append([[{text:"c\r"}, {text:"d"}]]);
+  expect(report.render(false)).toEqual([" tool ab", "cd"]);
 });
