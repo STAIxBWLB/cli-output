@@ -63,7 +63,7 @@ export function terminalText(value: unknown): string {
 
 export interface Span { text: string; role?: Role }
 export function paint(spans: readonly Span[], color: boolean): string {
-  return spans.map(span => { const text = terminalText(span.text); const sgr = span.role && ROLE_SGR[span.role]; return color && sgr && text ? sgr + text + SGR_RESET : text; }).join("");
+  return spans.map(span => { const text = terminalText(span.text); const sgr = span.role && Object.hasOwn(ROLE_SGR, span.role) ? ROLE_SGR[span.role] : undefined; return color && sgr && text ? sgr + text + SGR_RESET : text; }).join("");
 }
 export class Report {
   private readonly out: Span[][] = [];
@@ -119,15 +119,30 @@ export class Report {
   /** Render a table. The flexible column wraps; other columns are capped at 32 cells. */
   table(head: readonly string[], rows: readonly (readonly string[])[], flexible = head.length - 1): this {
     if (!head.length) return this;
-    if (flexible < 0 || flexible >= head.length) throw new RangeError("invalid flexible column");
+    if (flexible < 0 || flexible >= head.length) throw new RangeError(`flexible column ${flexible} must be between 0 and ${head.length - 1}`);
     const clean = rows.map(row => head.map((_, i) => terminalText(row[i] ?? "").replace(/[\n\t]/g, " ") || "-"));
     const keep = head.map((_, i) => i).filter(i => clean.some(row => row[i] !== "-"));
     if (!keep.length) return this;
-    const widths = keep.map(i => Math.min(32, Math.max(cellWidth(head[i]!.toUpperCase()), ...clean.map(row => cellWidth(row[i]!)))));
     const flexAt = keep.indexOf(flexible);
-    if (flexAt >= 0 && this.columns !== undefined) widths[flexAt] = Math.max(1, this.columns - 2 - 2 * (keep.length - 1) - widths.reduce((sum, width, i) => sum + (i === flexAt ? 0 : width), 0));
+    const widths = keep.map(i => {
+      const natural = Math.max(cellWidth(head[i]!.toUpperCase()), ...clean.map(row => cellWidth(row[i]!)));
+      return i === flexible ? natural : Math.min(32, natural);
+    });
+    if (this.columns !== undefined) {
+      const available = Math.max(keep.length, this.columns - 2 - 2 * (keep.length - 1));
+      const minimum = flexAt >= 0 ? Math.min(10, Math.max(1, available - (keep.length - 1))) : 1;
+      if (flexAt >= 0) widths[flexAt] = Math.max(minimum, Math.min(widths[flexAt]!, available - widths.reduce((sum, width, i) => sum + (i === flexAt ? 0 : width), 0)));
+      while (widths.reduce((sum, width) => sum + width, 0) > available) {
+        const candidates = widths.map((width, i) => ({width, i})).filter(({width, i}) => width > (i === flexAt ? minimum : 1)).sort((a, b) => b.width - a.width);
+        if (!candidates.length) break;
+        widths[candidates[0]!.i]!--;
+      }
+    }
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
-    this.push([{ text: "  " }, ...keep.flatMap((i, n) => [{ text: pad(head[i]!.toUpperCase(), widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
+    const headings = keep.map((i, n) => wrap(head[i]!.toUpperCase(), widths[n]!, 0));
+    for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
+      this.push([{ text: "  " }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
+    }
     for (const row of clean) {
       const cells = keep.map((i, n) => {
         const value = row[i]!, width = Math.max(1, widths[n]!);

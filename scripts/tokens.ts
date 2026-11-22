@@ -10,5 +10,5 @@ const tokens = {
 const output = JSON.stringify(tokens, null, 2) + "\n";
 const file = new URL("../tokens/v1.json", import.meta.url);
 if (process.argv.includes("--check")) {
-  if (await Bun.file(file).text() !== output) { console.error("tokens/v1.json is stale"); process.exitCode = 1; }
+  if (await Bun.file(file).text() !== output) { console.error("tokens/v1.json is stale; run bun run tokens"); process.exitCode = 1; }
 } else await Bun.write(file, output);

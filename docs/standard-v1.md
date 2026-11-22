@@ -132,7 +132,7 @@ Glyphs are semantic; each pairs with one role. Code uses named constants, never 
 ## Per-language notes (guidance)
 
 - Go: lipgloss v2 as dot uses it; lipgloss downsamples colors itself, so define roles with ANSI colors and add a theme only per the color policy. Disable its CLICOLOR handling only if it disagrees with the table above.
-- TypeScript / Bun: a small zero-dependency module (role to SGR map, marker table, color resolution, `paint`). `ahub` grows its existing `Tone` / `PALETTE` / `paint` in `src/cli/console-state.ts` instead of adding a dependency.
+- TypeScript / Bun: a small zero-dependency module (role to SGR map, marker table, color resolution, `paint`). Use `@staix/cli-output` for the shared Bun implementation.
 - Rust: `anstyle` + `anstream`, and clap's `styles()` set to the same roles for help.
 - Python: `rich` or `click.style`, gated by the same policy.
 

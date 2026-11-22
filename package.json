@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "CLI output standard v1 for Bun",
   "type": "module",
+  "repository": { "type": "git", "url": "git+https://github.com/STAIxBWLB/cli-output.git" },
   "exports": "./src/index.ts",
   "types": "./src/index.ts",
   "files": ["src", "docs/standard-v1.md", "tokens/v1.json", "fixtures/v1", "README.md", "LICENSE"],

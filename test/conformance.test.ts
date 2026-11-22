@@ -4,12 +4,31 @@ import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth,
 import colors from "../fixtures/v1/color.json";
 import markers from "../fixtures/v1/markers.json";
 import errors from "../fixtures/v1/error-line.json";
-for (const c of colors) test(`color ${c.id}`, () => expect(resolveColor(c.flag, c.env, "tool")).toBe(c.expected));
+for (const c of colors) test(`color ${c.id}`, () => {
+  const actual = resolveColor(c.flag, c.env, "tool");
+  if ("expectedError" in c) expect(actual).toEqual(new Error(c.expectedError));
+  else expect(actual).toBe(c.expected);
+});
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
 for (const c of errors) test(`error ${c.id}`, () => expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected));
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
-  test(`report ${fixture.id}`, () => { const i = fixture.input; const report = new Report(80).header(i.tool, i.title).section(i.section).bullet(i.marker, i.text).summary({ ok: 1 }); expect(report.render(false)).toEqual(fixture.plain); expect(report.render(true)).toEqual(fixture.colored); });
+  test(`report ${fixture.id}`, () => {
+    const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii);
+    for (const operation of fixture.input.operations) {
+      switch (operation.op) {
+        case "header": report.header(operation.tool, operation.name, operation.context); break;
+        case "section": report.section(operation.name, operation.count); break;
+        case "kv": report.kv(operation.rows); break;
+        case "bullet": report.bullet(operation.marker, operation.text, operation.nested); break;
+        case "next": report.next(operation.command); break;
+        case "table": report.table(operation.head, operation.rows, operation.flexible); break;
+        case "summary": report.summary(operation.counts); break;
+        default: throw new Error(`Unknown operation: ${operation.op}`);
+      }
+    }
+    expect(report.render(false)).toEqual(fixture.plain); expect(report.render(true)).toEqual(fixture.colored);
+  });
 }
 test("library conformance", () => {
   expect(paint([{text:"failed",role:"error"}], false)).toBe("failed");
@@ -49,4 +68,18 @@ test("reference color table parity", () => {
     [undefined, tty, true], ["auto", {...tty, TERM:"xterm-256color"}, true], [undefined, {...tty, TERM:"dumb"}, false], [undefined, pipe, false], ["auto", {...pipe, TERM:"xterm"}, false],
   ];
   for (const [flag, env, expected] of cases) expect(resolveColor(flag, env, "tool")).toBe(expected);
+});
+
+test("painting ignores inherited role names", () => {
+  expect(paint([{ text: "x", role: "constructor" as never }], true)).toBe("x");
+});
+test("table respects unbounded pipes and constrained widths", () => {
+  const text = "x".repeat(100);
+  const unbounded = new Report().table(["id", "state", "finding"], [["1", "ok", text]], 2).render(false);
+  expect(unbounded).toHaveLength(2); expect(unbounded[1]).toContain(text); expect(unbounded[0]).toBe(unbounded[0]!.trimEnd());
+  for (const width of [60, 80]) {
+    const lines = new Report(width).table(["id", "path", "finding"], [["i".repeat(43), "/" + "p".repeat(40), "some finding text"]], 2).render(false);
+    for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(width);
+    expect(lines.length).toBeLessThan(10);
+  }
 });

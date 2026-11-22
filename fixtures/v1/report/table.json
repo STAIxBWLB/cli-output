@@ -1,0 +1,46 @@
+{
+  "id": "table",
+  "input": {
+    "columns": 60,
+    "ascii": false,
+    "operations": [
+      {
+        "op": "section",
+        "name": "Results"
+      },
+      {
+        "op": "table",
+        "head": [
+          "id",
+          "path",
+          "finding"
+        ],
+        "rows": [
+          [
+            "12",
+            "/some/path",
+            "ready"
+          ],
+          [
+            "13",
+            "",
+            "needs attention"
+          ]
+        ],
+        "flexible": 2
+      }
+    ]
+  },
+  "plain": [
+    "▸ Results",
+    "  ID  PATH        FINDING",
+    "  12  /some/path  ready",
+    "  13  -           needs attention"
+  ],
+  "colored": [
+    "\u001b[1;35m▸ Results\u001b[0m",
+    "  \u001b[34mID\u001b[0m  \u001b[34mPATH      \u001b[0m  \u001b[34mFINDING\u001b[0m",
+    "  12  /some/path  ready",
+    "  13  \u001b[90m-         \u001b[0m  needs attention"
+  ]
+}
