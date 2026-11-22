@@ -1,0 +1,75 @@
+{
+  "id": "configurable-layout",
+  "input": {
+    "columns": 80,
+    "ascii": false,
+    "operations": [
+      {
+        "op": "table",
+        "head": [
+          "state",
+          "empty",
+          "detail"
+        ],
+        "rows": [
+          [
+            {
+              "text": "ok",
+              "role": "success"
+            },
+            "",
+            "ready"
+          ],
+          [
+            {
+              "text": "fail",
+              "role": "error"
+            },
+            "",
+            "broken"
+          ]
+        ],
+        "flexible": 2,
+        "options": {
+          "indent": 0,
+          "dropEmptyColumns": false
+        }
+      },
+      {
+        "op": "kv",
+        "rows": [
+          [
+            "name",
+            "value"
+          ],
+          [
+            "missing",
+            ""
+          ],
+          [
+            "id",
+            7
+          ]
+        ],
+        "options": {
+          "colon": false,
+          "omitEmpty": true
+        }
+      }
+    ]
+  },
+  "plain": [
+    "STATE  EMPTY  DETAIL",
+    "ok     -      ready",
+    "fail   -      broken",
+    "  name  value",
+    "  id    7"
+  ],
+  "colored": [
+    "\u001b[34mSTATE\u001b[0m  \u001b[34mEMPTY\u001b[0m  \u001b[34mDETAIL\u001b[0m",
+    "\u001b[1;32mok   \u001b[0m  \u001b[90m-    \u001b[0m  ready",
+    "\u001b[1;31mfail \u001b[0m  \u001b[90m-    \u001b[0m  broken",
+    "  \u001b[34mname\u001b[0m  value",
+    "  \u001b[34mid\u001b[0m    7"
+  ]
+}
