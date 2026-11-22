@@ -11,6 +11,8 @@ console.log(new Report(80).section("Checks").bullet("ok", "ready").render(color)
 
 `Report` is experimental until its API settles. `resolveColor` returns an Error for an invalid flag; decide stdout and stderr separately.
 
+`terminalText(value)` removes terminal sequences and normalizes CRLF and CR to LF, preserving tabs and newlines. Pass `{ singleLine: true }` to replace remaining control characters with spaces for single-line fields.
+
 ## Vendoring tokens and fixtures
 
 For a non-Bun implementation, copy `tokens/v1.json` and `fixtures/v1/` from an exact release tag, preserving paths. Record the tag alongside the copies. Verify each vendored file against that tag with `git show <tag>:<path>` and a SHA-256 comparison, and check the complete file list as well as the checksums. Run all fixtures in the consumer's tests.

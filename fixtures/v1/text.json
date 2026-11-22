@@ -1,0 +1,48 @@
+[
+  {
+    "id": "c1-complete",
+    "input": "before\u009b31mred\u009b0mafter",
+    "expected": "beforeredafter"
+  },
+  {
+    "id": "c1-incomplete",
+    "input": "before\u009b38;5;",
+    "expected": "before"
+  },
+  {
+    "id": "c1-incomplete-line",
+    "input": "before\u009b38;5;\nafter",
+    "expected": "before\nafter"
+  },
+  {
+    "id": "esc-csi",
+    "input": "before\u001b[31mred\u001b[0mafter",
+    "expected": "beforeredafter"
+  },
+  {
+    "id": "osc",
+    "input": "before\u001b]0;title\u0007after",
+    "expected": "beforeafter"
+  },
+  {
+    "id": "line-endings",
+    "input": "one\r\ntwo\rthree\nfour\tend",
+    "expected": "one\ntwo\nthree\nfour\tend"
+  },
+  {
+    "id": "single-line",
+    "input": "one\r\ntwo\rthree\nnext\tend\u0001",
+    "options": {
+      "singleLine": true
+    },
+    "expected": "one two three next end "
+  },
+  {
+    "id": "single-line-csi",
+    "input": "a\u009b31mb\nend",
+    "options": {
+      "singleLine": true
+    },
+    "expected": "ab end"
+  }
+]

@@ -4,6 +4,7 @@ import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth,
 import colors from "../fixtures/v1/color.json";
 import markers from "../fixtures/v1/markers.json";
 import errors from "../fixtures/v1/error-line.json";
+import texts from "../fixtures/v1/text.json";
 for (const c of colors) test(`color ${c.id}`, () => {
   const actual = resolveColor(c.flag, c.env, "tool");
   if ("expectedError" in c) expect(actual).toEqual(new Error(c.expectedError));
@@ -11,6 +12,7 @@ for (const c of colors) test(`color ${c.id}`, () => {
 });
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
 for (const c of errors) test(`error ${c.id}`, () => expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected));
+for (const c of texts) test(`text ${c.id}`, () => expect(terminalText(c.input, c.options)).toBe(c.expected));
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
   test(`report ${fixture.id}`, () => {
