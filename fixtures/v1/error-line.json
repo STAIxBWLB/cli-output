@@ -1,5 +1,135 @@
 [
-  {"id":"tty","tool":"tool","what":"failed","why":"missing","options":{"tty":true,"next":"tool setup"},"expected":["✗ tool: failed: missing","  → tool setup"]},
-  {"id":"pipe","tool":"tool","what":"failed","why":"missing","options":{"tty":false},"expected":["tool: failed: missing"]},
-  {"id":"ascii","tool":"tool","what":"failed","why":"missing","options":{"tty":true,"ascii":true,"next":"tool setup"},"expected":["x tool: failed: missing","  -> tool setup"]}
+  {
+    "id": "tty",
+    "tool": "tool",
+    "what": "failed",
+    "why": "missing",
+    "options": {
+      "tty": true,
+      "next": "tool setup"
+    },
+    "expected": [
+      "✗ tool: failed: missing",
+      "  → tool setup"
+    ],
+    "spans": [
+      [
+        {
+          "text": "✗ ",
+          "role": "error"
+        },
+        {
+          "text": "tool: failed: missing"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "→ tool setup",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[1;31m✗ \u001b[0mtool: failed: missing",
+      "  \u001b[36m→ tool setup\u001b[0m"
+    ]
+  },
+  {
+    "id": "pipe",
+    "tool": "tool",
+    "what": "failed",
+    "why": "missing",
+    "options": {
+      "tty": false
+    },
+    "expected": [
+      "tool: failed: missing"
+    ],
+    "spans": [
+      [
+        {
+          "text": "tool: failed: missing"
+        }
+      ]
+    ],
+    "colored": [
+      "tool: failed: missing"
+    ]
+  },
+  {
+    "id": "ascii",
+    "tool": "tool",
+    "what": "failed",
+    "why": "missing",
+    "options": {
+      "tty": true,
+      "ascii": true,
+      "next": "tool setup"
+    },
+    "expected": [
+      "x tool: failed: missing",
+      "  -> tool setup"
+    ],
+    "spans": [
+      [
+        {
+          "text": "x ",
+          "role": "error"
+        },
+        {
+          "text": "tool: failed: missing"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "-> tool setup",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[1;31mx \u001b[0mtool: failed: missing",
+      "  \u001b[36m-> tool setup\u001b[0m"
+    ]
+  },
+  {
+    "id": "pipe-with-next",
+    "tool": "tool",
+    "what": "failed",
+    "why": "missing",
+    "options": {
+      "tty": false,
+      "next": "tool setup"
+    },
+    "expected": [
+      "tool: failed: missing",
+      "  → tool setup"
+    ],
+    "spans": [
+      [
+        {
+          "text": "tool: failed: missing"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "→ tool setup",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "tool: failed: missing",
+      "  \u001b[36m→ tool setup\u001b[0m"
+    ]
+  }
 ]

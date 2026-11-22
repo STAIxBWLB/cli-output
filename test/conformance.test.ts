@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
-import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, streamWidth, type MarkerName } from "../src/index.ts";
+import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, errorSpans, lineSpans, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, streamWidth, type MarkerName } from "../src/index.ts";
 import colors from "../fixtures/v1/color.json";
 import markers from "../fixtures/v1/markers.json";
 import errors from "../fixtures/v1/error-line.json";
@@ -12,7 +12,12 @@ for (const c of colors) test(`color ${c.id}`, () => {
   else expect(actual).toBe(c.expected);
 });
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
-for (const c of errors) test(`error ${c.id}`, () => expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected));
+for (const c of errors) test(`error ${c.id}`, () => {
+  expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected);
+  const spans = errorSpans(c.tool, c.what, c.why, c.options);
+  expect<unknown>(spans).toEqual(c.spans);
+  expect(spans.map(line => paint(line, true))).toEqual(c.colored);
+});
 for (const c of texts) test(`text ${c.id}`, () => expect(terminalText(c.input, c.options)).toBe(c.expected));
 for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns, c.hang)).toEqual(c.expected));
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
@@ -21,6 +26,7 @@ for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url
     const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii);
     for (const operation of fixture.input.operations) {
       switch (operation.op) {
+        case "line": report.line(operation.text); expect(lineSpans(operation.text, fixture.input.columns ?? undefined).map(line => paint(line, false))).toEqual(operation.lines); break;
         case "header": report.header(operation.tool, operation.name, operation.context); break;
         case "section": report.section(operation.name, operation.count); break;
         case "kv": report.kv(operation.rows, operation.indent, operation.options); break;
