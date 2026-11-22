@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
-import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, errorSpans, lineSpans, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, streamWidth, type MarkerName } from "../src/index.ts";
+import { MARKER_NAMES, MARKERS, ROLE_SGR, EXIT, Report, asciiMarkers, cellWidth, errorLine, errorSpans, lineSpans, markerCell, paint, resolveColor, streamEnv, terminalText, wrap, wrapSpans, streamWidth, type MarkerName } from "../src/index.ts";
 import colors from "../fixtures/v1/color.json";
 import markers from "../fixtures/v1/markers.json";
 import errors from "../fixtures/v1/error-line.json";
 import texts from "../fixtures/v1/text.json";
 import wraps from "../fixtures/v1/wrap.json";
+import spanWraps from "../fixtures/v1/span-wrap.json";
 for (const c of colors) test(`color ${c.id}`, () => {
   const actual = resolveColor(c.flag, c.env, "tool");
   if ("expectedError" in c) expect(actual).toEqual(new Error(c.expectedError));
@@ -20,6 +21,11 @@ for (const c of errors) test(`error ${c.id}`, () => {
 });
 for (const c of texts) test(`text ${c.id}`, () => expect(terminalText(c.input, c.options)).toBe(c.expected));
 for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns, c.hang)).toEqual(c.expected));
+for (const c of spanWraps) test(`span wrap ${c.id}`, () => {
+  const lines = wrapSpans(c.input as Parameters<typeof wrapSpans>[0], c.columns, c.hang);
+  expect<unknown>(lines).toEqual(c.expected);
+  expect(lines.map(line => paint(line, true, c.styles))).toEqual(c.colored);
+});
 for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url)).filter(f => f.endsWith(".json"))) {
   const fixture = await Bun.file(new URL(`../fixtures/v1/report/${file}`, import.meta.url)).json();
   test(`report ${fixture.id}`, () => {
@@ -146,4 +152,11 @@ test("consumer-first policy applies to assembled header and appended spans", () 
   const sanitize = (text: string) => text.replace(/\r/g, "");
   const report = new Report(undefined, false, { sanitizeFirst: true, sanitize }).header("tool", "a\rb").append([[{text:"c\r"}, {text:"d"}]]);
   expect(report.render(false)).toEqual([" tool ab", "cd"]);
+});
+
+test("span wrapping removes controls that cross span boundaries", () => {
+  const spans = [{text:"x\x1b]0;", role:"error" as const}, {text:"title\x07y", role:"hint" as const}];
+  const lines = wrapSpans(spans, 20);
+  expect(lines.map(line => paint(line, false)).join("\n")).toBe("xy");
+  expect(lines.map(line => paint(line, true)).join("\n")).not.toContain("\x1b");
 });
