@@ -14,8 +14,8 @@ for (const c of colors) test(`color ${c.id}`, () => {
 });
 for (const c of markers) test(`marker ${c.id}`, () => { expect(markerCell(c.name as MarkerName, false)).toBe(c.utf8); expect(markerCell(c.name as MarkerName, true)).toBe(c.ascii); });
 for (const c of errors) test(`error ${c.id}`, () => {
-  expect(errorLine(c.tool, c.what, c.why, c.options)).toEqual(c.expected);
-  const spans = errorSpans(c.tool, c.what, c.why, c.options);
+  expect(errorLine(c.tool, c.what, c.why, c.options, "columns" in c ? c.columns : undefined)).toEqual(c.expected);
+  const spans = errorSpans(c.tool, c.what, c.why, c.options, "columns" in c ? c.columns : undefined);
   expect<unknown>(spans).toEqual(c.spans);
   expect(spans.map(line => paint(line, true))).toEqual(c.colored);
 });

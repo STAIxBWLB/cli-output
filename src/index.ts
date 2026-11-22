@@ -356,15 +356,16 @@ export function lineSpans(text: string, columns?: number): Span[][] {
 export const EXIT = Object.freeze({ ok: 0, fail: 1, usage: 2, tempfail: 75 } as const);
 export interface ErrorOptions { next?: string; tty: boolean; ascii?: boolean }
 /** Error and next-step spans for a single stream; use paint with that stream's color decision. */
-export function errorSpans(tool: string, what: string, why: string, options: ErrorOptions): Span[][] {
+export function errorSpans(tool: string, what: string, why: string, options: ErrorOptions, columns?: number): Span[][] {
   const message = `${terminalText(tool)}: ${terminalText(what)}${why ? `: ${terminalText(why)}` : ""}`;
-  const lines: Span[][] = [options.tty
-    ? [{ text: `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} `, role: "error" }, { text: message }]
-    : [{ text: message }]];
+  const first: Span[] = options.tty
+    ? [{ text: `${options.ascii ? MARKERS.fail.ascii : MARKERS.fail.glyph} `, role: MARKERS.fail.role }, { text: message }]
+    : [{ text: message }];
+  const lines = columns === undefined ? [first] : wrapSpans(first, columns, 0);
   if (options.next) lines.push([{ text: "  " }, { text: `${options.ascii ? MARKERS.next.ascii : MARKERS.next.glyph} ${terminalText(options.next)}`, role: "accent" }]);
   return lines;
 }
 /** Plain-string compatibility form. */
-export function errorLine(tool: string, what: string, why: string, options: ErrorOptions): string[] {
-  return errorSpans(tool, what, why, options).map(line => paint(line, false));
+export function errorLine(tool: string, what: string, why: string, options: ErrorOptions, columns?: number): string[] {
+  return errorSpans(tool, what, why, options, columns).map(line => paint(line, false));
 }

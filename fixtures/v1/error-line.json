@@ -131,5 +131,95 @@
       "tool: failed: missing",
       "  \u001b[36m→ tool setup\u001b[0m"
     ]
+  },
+  {
+    "id": "tty-width",
+    "tool": "tool",
+    "what": "failed to open the resource",
+    "why": "access denied",
+    "options": {
+      "tty": true,
+      "next": "tool setup --full-option"
+    },
+    "columns": 20,
+    "expected": [
+      "✗ tool: failed to",
+      "open the resource:",
+      "access denied",
+      "  → tool setup --full-option"
+    ],
+    "spans": [
+      [
+        {
+          "text": "✗ ",
+          "role": "error"
+        },
+        {
+          "text": "tool: failed to"
+        }
+      ],
+      [
+        {
+          "text": "open the resource:"
+        }
+      ],
+      [
+        {
+          "text": "access denied"
+        }
+      ],
+      [
+        {
+          "text": "  "
+        },
+        {
+          "text": "→ tool setup --full-option",
+          "role": "accent"
+        }
+      ]
+    ],
+    "colored": [
+      "\u001b[1;31m✗ \u001b[0mtool: failed to",
+      "open the resource:",
+      "access denied",
+      "  \u001b[36m→ tool setup --full-option\u001b[0m"
+    ]
+  },
+  {
+    "id": "pipe-width",
+    "tool": "tool",
+    "what": "failed to open the resource",
+    "why": "access denied",
+    "options": {
+      "tty": false
+    },
+    "columns": 20,
+    "expected": [
+      "tool: failed to open",
+      "the resource: access",
+      "denied"
+    ],
+    "spans": [
+      [
+        {
+          "text": "tool: failed to open"
+        }
+      ],
+      [
+        {
+          "text": "the resource: access"
+        }
+      ],
+      [
+        {
+          "text": "denied"
+        }
+      ]
+    ],
+    "colored": [
+      "tool: failed to open",
+      "the resource: access",
+      "denied"
+    ]
   }
 ]
