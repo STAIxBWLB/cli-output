@@ -102,7 +102,7 @@ Glyphs are semantic; each pairs with one role. Code uses named constants, never 
 ## Messages
 
 - Error line (stderr): `<tool>: <what failed>: <why>`. When stderr is a TTY it is prefixed with the `fail` marker (`✗ ahub: ...`); piped stderr keeps the plain form, so scripts and agents that match `<tool>: ` keep working.
-- Next step: when the CLI knows the fix, a second line `  → <command or setting>` (ASCII `  -> `), complete and copyable (`cd` prefix and every value filled in), in `accent`. When a command wraps, break only at unquoted whitespace and mark continuation lines with shell line continuation; never split or shorten a token. An error raised by a server or daemon that carries no fix prints no `→` line; the CLI never invents one.
+- Next step: when the CLI knows the fix, a second line `  → <command or setting>` (ASCII `  -> `), complete and copyable (`cd` prefix and every value filled in), in `accent`. When a command wraps, break only at unquoted whitespace and mark continuation lines with shell line continuation; never split or shorten a token. The package offers a legacy compatibility option that leaves a command unwrapped; output that exceeds the width under that option does not meet the width rule. An error raised by a server or daemon that carries no fix prints no `→` line; the CLI never invents one.
 - Warning (stderr): `<tool>: warning: <what>: <why>`, `warn` marker on a TTY, optional `→` line.
 - Success confirmation (stdout): `✓ <what was done>`; omit it when the output already shows the result.
 - Usage error: the message, then `Usage: <tool> <command> <args>` and `Run '<tool> help <command>' for details.`, exit `2`.

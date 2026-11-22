@@ -75,7 +75,12 @@ export function terminalText(value: unknown, options: { singleLine?: boolean } =
 }
 
 export interface Span { text: string; role?: Role; style?: string }
-export interface ReportOptions { sanitize?: (text: string) => string; styles?: Readonly<Record<string, string>> }
+export interface ReportOptions {
+  sanitize?: (text: string) => string;
+  styles?: Readonly<Record<string, string>>;
+  wrapNext?: boolean;
+  sanitizeFirst?: boolean;
+}
 export type TableCell = string | Span;
 export interface TableOptions { indent?: number; dropEmptyColumns?: boolean }
 export interface KvOptions { colon?: boolean; omitEmpty?: boolean }
@@ -111,16 +116,18 @@ export class Report {
   /** `columns` undefined means no wrap width: standard v1 wraps on a pipe only when COLUMNS is set. */
   constructor(readonly columns: number | undefined = undefined, readonly ascii = false, readonly options: ReportOptions = {}) {}
   private clean(value: unknown): string {
-    const text = terminalText(value);
+    const raw = String(value ?? "");
+    if (this.options.sanitizeFirst && this.options.sanitize) return terminalText(this.options.sanitize(raw));
+    const text = terminalText(raw);
     return this.options.sanitize ? terminalText(this.options.sanitize(text)) : text;
   }
   /** A sanitizer that changes a whole line cannot reliably preserve its original span boundaries. */
   private cleanLine(line: readonly Span[]): Span[] {
     if (!this.options.sanitize) return line.map(item => ({ ...item }));
-    const clean = line.map(item => ({ ...item, text: terminalText(item.text) }));
+    const clean = line.map(item => ({ ...item, text: this.options.sanitizeFirst ? item.text : terminalText(item.text) }));
     const text = clean.map(item => item.text).join("");
     const result = this.clean(text);
-    return result === text ? clean : [{ text: result }];
+    return result === text ? clean.map(item => ({ ...item, text: terminalText(item.text) })) : [{ text: result }];
   }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
@@ -246,7 +253,7 @@ export class Report {
   /** `    →  <command>` in `accent`: complete and copyable, never shortened. */
   next(command: string): this {
     const text = this.clean(command), marker = `${markerCell("next", this.ascii)} `;
-    if (this.columns === undefined || text.includes("\n") || cellWidth("    " + marker + text) <= this.columns) {
+    if (this.options.wrapNext === false || this.columns === undefined || text.includes("\n") || cellWidth("    " + marker + text) <= this.columns) {
       this.push([{ text: "    " }, { text: marker + text, role: "accent" }]);
       return this;
     }
