@@ -196,3 +196,21 @@ test("table clipping validates caps and preserves grapheme clusters", () => {
   expect(lines[1]).toContain("한글...");
   expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(60);
 });
+
+test("whole-token wrapping leaves surrounding prose wrapped and preserves defaults", () => {
+  const long = "abcdefghij";
+  expect(wrap(`one ${long} two`, 6, 0, undefined, true)).toEqual(["one", long, "two"]);
+  expect(wrap(long, 6, 0)).toEqual(["abcdef", "ghij"]);
+  expect(new Report(12, false, {keepTokensWhole:true}).line(`start ${long}xyz end`).render(false)).toEqual(["start", "abcdefghijxyz", "end"]);
+  const lines = new Report(20, false, {keepTokensWhole:true}).table(["path", "value"], [["/very/long/path/that/must/fit", "ok"]], 1, {widths:[12,5]}).render(false);
+  expect(lines[1]).toContain("..."); expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(20);
+});
+
+test("whole-token policy keeps non-flexible table columns aligned", () => {
+  const report = new Report(30, false, {keepTokensWhole:true}).table(["id", "note"], [["abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", "ok"]], 1);
+  const lines = report.render(false);
+  const headingAt = lines[0]!.indexOf("NOTE");
+  const valueAt = lines.find(line => line.includes("ok"))!.indexOf("ok");
+  expect(valueAt).toBe(headingAt);
+  for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(30);
+});
