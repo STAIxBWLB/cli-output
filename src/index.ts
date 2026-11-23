@@ -157,11 +157,11 @@ export class Report {
     const result = this.clean(text);
     return result === text ? clean.map(item => ({ ...item, text: terminalText(item.text) })) : [{ text: result }];
   }
-  private wrapText(text: string, columns: number | undefined, hang = 0): string[] {
+  private wrapText(text: string, columns: number | undefined, hang = 0, keepTokensWhole = this.options.keepTokensWhole): string[] {
     const chunk = this.options.sanitizeChunks && this.options.sanitize
       ? (value: string) => this.clean(value + " ").slice(0, -1)
       : undefined;
-    return wrap(text, columns, hang, chunk, this.options.keepTokensWhole);
+    return wrap(text, columns, hang, chunk, keepTokensWhole);
   }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
@@ -254,7 +254,7 @@ export class Report {
       }
     }
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
-    const headings = keep.map((i, n) => this.wrapText(heading(i), widths[n]!, 0));
+    const headings = keep.map((i, n) => this.wrapText(heading(i), widths[n]!, 0, false));
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
       this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), ...(options.headingStyle ? { style: options.headingStyle } : { role: "key" as const }) }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
     }
@@ -277,7 +277,7 @@ export class Report {
           while (chars.length && cellWidth(left + "..." + chars.at(-1) + right) <= width) right = chars.pop() + right;
           return [left + "..." + right];
         }
-        return this.wrapText(value, width, 0);
+        return this.wrapText(value, width, 0, i === flexible && this.options.keepTokensWhole);
       });
       const height = Math.max(...cells.map(cell => cell.length));
       for (let line = 0; line < height; line++) {

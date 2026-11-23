@@ -205,3 +205,12 @@ test("whole-token wrapping leaves surrounding prose wrapped and preserves defaul
   const lines = new Report(20, false, {keepTokensWhole:true}).table(["path", "value"], [["/very/long/path/that/must/fit", "ok"]], 1, {widths:[12,5]}).render(false);
   expect(lines[1]).toContain("..."); expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(20);
 });
+
+test("whole-token policy keeps non-flexible table columns aligned", () => {
+  const report = new Report(30, false, {keepTokensWhole:true}).table(["id", "note"], [["abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", "ok"]], 1);
+  const lines = report.render(false);
+  const headingAt = lines[0]!.indexOf("NOTE");
+  const valueAt = lines.find(line => line.includes("ok"))!.indexOf("ok");
+  expect(valueAt).toBe(headingAt);
+  for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(30);
+});
