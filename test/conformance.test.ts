@@ -196,3 +196,12 @@ test("table clipping validates caps and preserves grapheme clusters", () => {
   expect(lines[1]).toContain("한글...");
   expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(60);
 });
+
+test("whole-token wrapping leaves surrounding prose wrapped and preserves defaults", () => {
+  const long = "abcdefghij";
+  expect(wrap(`one ${long} two`, 6, 0, undefined, true)).toEqual(["one", long, "two"]);
+  expect(wrap(long, 6, 0)).toEqual(["abcdef", "ghij"]);
+  expect(new Report(12, false, {keepTokensWhole:true}).line(`start ${long}xyz end`).render(false)).toEqual(["start", "abcdefghijxyz", "end"]);
+  const lines = new Report(20, false, {keepTokensWhole:true}).table(["path", "value"], [["/very/long/path/that/must/fit", "ok"]], 1, {widths:[12,5]}).render(false);
+  expect(lines[1]).toContain("..."); expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(20);
+});

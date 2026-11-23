@@ -1,0 +1,27 @@
+{
+  "id": "whole-path-bullet",
+  "input": {
+    "columns": 80,
+    "ascii": false,
+    "reportOptions": {
+      "keepTokensWhole": true
+    },
+    "operations": [
+      {
+        "op": "bullet",
+        "marker": "next",
+        "text": "Open /srv/archive/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/report.txt for details"
+      }
+    ]
+  },
+  "plain": [
+    "  →  Open",
+    "     /srv/archive/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/report.txt",
+    "     for details"
+  ],
+  "colored": [
+    "  \u001b[36m→ \u001b[0m Open",
+    "     /srv/archive/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/report.txt",
+    "     for details"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "whole-url-table",
+  "input": {
+    "columns": 80,
+    "ascii": false,
+    "reportOptions": {
+      "keepTokensWhole": true
+    },
+    "operations": [
+      {
+        "op": "table",
+        "head": [
+          "kind",
+          "link"
+        ],
+        "rows": [
+          [
+            "source",
+            "Read https://example.org/reports/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa for details"
+          ]
+        ],
+        "flexible": 1
+      }
+    ]
+  },
+  "plain": [
+    "  KIND    LINK",
+    "  source  Read",
+    "          https://example.org/reports/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "          for details"
+  ],
+  "colored": [
+    "  \u001b[34mKIND  \u001b[0m  \u001b[34mLINK\u001b[0m",
+    "  source  Read",
+    "          https://example.org/reports/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "          for details"
+  ]
+}

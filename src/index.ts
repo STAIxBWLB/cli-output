@@ -81,6 +81,7 @@ export interface ReportOptions {
   wrapNext?: boolean;
   sanitizeFirst?: boolean;
   sanitizeChunks?: boolean;
+  keepTokensWhole?: boolean;
 }
 export type TableCell = string | Span;
 export interface TableOptions {
@@ -160,7 +161,7 @@ export class Report {
     const chunk = this.options.sanitizeChunks && this.options.sanitize
       ? (value: string) => this.clean(value + " ").slice(0, -1)
       : undefined;
-    return wrap(text, columns, hang, chunk);
+    return wrap(text, columns, hang, chunk, this.options.keepTokensWhole);
   }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
@@ -326,7 +327,7 @@ export class Report {
   render(color: boolean): string[] { return this.out.map(line => paint(this.cleanLine(line), color, this.options.styles)); }
 }
 
-export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?: (text: string) => string): string[] {
+export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?: (text: string) => string, keepTokensWhole = false): string[] {
   if (columns === undefined) return terminalText(value).replace(/\t/g, " ").split("\n");
   if (!Number.isFinite(columns) || columns < 1) throw new RangeError("wrap columns must be positive");
   const lines: string[] = [];
@@ -345,6 +346,7 @@ export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?:
       if (width(line + token) <= columns) { line += token; continue; }
       if (line !== start) push();
       if (/^\s/.test(token)) continue;
+      if (keepTokensWhole) { line += token; continue; }
       for (const { segment: char } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(token)) {
         if (line !== start && width(line + char) > columns) push();
         line += char;
