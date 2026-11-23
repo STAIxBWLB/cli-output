@@ -2,6 +2,20 @@
 
 Notable changes to `@staix/cli-output`. During 0.x a breaking API or token change is a minor release and anything else is a patch (#5). Each release is published from its `v<version>` tag through npm trusted publishing.
 
+## 0.1.3 - 2026-11-23
+
+- **Added**
+  - `Report` option `sanitizeChunks: true` applies the consumer sanitizer to each wrapped chunk and counts the text it adds toward the width. `wrap` takes the matching optional chunk sanitizer. (#32, issue #29)
+  - `table` options `columnCaps` (a positive width, `"third"` or null per column), `clip: true`, which shortens non-flexible cells with `...`, and `headingStyle`, which gives headings a consumer style instead of the `key` role. (#33, issue #30)
+  - `Report` option `keepTokensWhole: true` keeps a long URL, path or command whole on its own line in prose and in a table's flexible column. Non-flexible cells keep their widths. `wrap` takes the matching optional flag. (#34, issue #31)
+  - New fixtures:
+    - `fixtures/v1/report/quote-chunks-12.json` and `quote-chunks-16.json`;
+    - `fixtures/v1/report/table-clipping.json`;
+    - `fixtures/v1/report/whole-url-table.json` and `whole-path-bullet.json`.
+- **For consumers running the fixtures**
+  - Support the `note` operation.
+  - Pass the new `reportOptions` (`sanitizeChunks`, `keepTokensWhole`) and table options (`columnCaps`, `clip`, `headingStyle`).
+
 ## 0.1.2 - 2026-11-23
 
 - **Added**
