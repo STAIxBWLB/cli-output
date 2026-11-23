@@ -23,6 +23,8 @@ The `quote-headers` sanitizer named by the consumer report fixture prefixes `> `
 
 `wrapSpans(spans, columns?, hang?)` wraps sanitized semantic spans while retaining their roles and styles. Without a width it returns one line containing the sanitized spans. A terminal escape split across spans is removed as a unit; that exceptional line loses its style boundaries.
 
+Set `sanitizeChunks: true` to apply the report sanitizer to candidate text chunks while wrapping and measure its added text before layout. The sanitizer must be idempotent and preserve a trailing space; it is still applied to constructed and rendered lines.
+
 The `drop-cr` sanitizer in `fixtures/v1/report/compat.json` removes every carriage return. The fixture’s `reportOptions` object supplies the optional third argument to `Report`.
 
 ## Vendoring tokens and fixtures

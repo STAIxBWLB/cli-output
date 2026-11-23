@@ -1,0 +1,26 @@
+{
+  "id": "quote-chunks-16",
+  "input": {
+    "columns": 16,
+    "ascii": false,
+    "sanitizer": "quote-headers",
+    "reportOptions": {
+      "sanitizeFirst": true,
+      "sanitizeChunks": true
+    },
+    "operations": [
+      {
+        "op": "note",
+        "text": "--- from x --- from x"
+      }
+    ]
+  },
+  "plain": [
+    "  > --- from x",
+    "  > --- from x"
+  ],
+  "colored": [
+    "  \u001b[90m> --- from x\u001b[0m",
+    "  \u001b[90m> --- from x\u001b[0m"
+  ]
+}

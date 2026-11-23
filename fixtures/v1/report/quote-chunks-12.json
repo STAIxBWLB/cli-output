@@ -1,0 +1,30 @@
+{
+  "id": "quote-chunks-12",
+  "input": {
+    "columns": 12,
+    "ascii": false,
+    "sanitizer": "quote-headers",
+    "reportOptions": {
+      "sanitizeFirst": true,
+      "sanitizeChunks": true
+    },
+    "operations": [
+      {
+        "op": "note",
+        "text": "abc [agent-hub message from test]"
+      }
+    ]
+  },
+  "plain": [
+    "  abc",
+    "  [agent-hu",
+    "  b message",
+    "  from test]"
+  ],
+  "colored": [
+    "  \u001b[90mabc\u001b[0m",
+    "  \u001b[90m[agent-hu\u001b[0m",
+    "  \u001b[90mb message\u001b[0m",
+    "  \u001b[90mfrom test]\u001b[0m"
+  ]
+}

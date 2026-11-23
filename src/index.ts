@@ -80,6 +80,7 @@ export interface ReportOptions {
   styles?: Readonly<Record<string, string>>;
   wrapNext?: boolean;
   sanitizeFirst?: boolean;
+  sanitizeChunks?: boolean;
 }
 export type TableCell = string | Span;
 export interface TableOptions {
@@ -152,9 +153,15 @@ export class Report {
     const result = this.clean(text);
     return result === text ? clean.map(item => ({ ...item, text: terminalText(item.text) })) : [{ text: result }];
   }
+  private wrapText(text: string, columns: number | undefined, hang = 0): string[] {
+    const chunk = this.options.sanitizeChunks && this.options.sanitize
+      ? (value: string) => this.clean(value + " ").slice(0, -1)
+      : undefined;
+    return wrap(text, columns, hang, chunk);
+  }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
-    return this.columns === undefined ? this.clean(text).split("\n").map(line => line.replace(/\t/g, " ")) : wrap(this.clean(text), Math.max(10, room), 0);
+    return this.columns === undefined ? this.clean(text).split("\n").map(line => line.replace(/\t/g, " ")) : this.wrapText(this.clean(text), Math.max(10, room), 0);
   }
   private push(line: Span[]) { this.out.push(this.cleanLine(line)); }
   /** ` <tool> <Report>` in `header`, then one line of context in `hint` on the same line. At most one per report. */
@@ -238,7 +245,7 @@ export class Report {
       }
     }
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
-    const headings = keep.map((i, n) => wrap(heading(i), widths[n]!, 0));
+    const headings = keep.map((i, n) => this.wrapText(heading(i), widths[n]!, 0));
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
       this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
     }
@@ -252,7 +259,7 @@ export class Report {
           while (chars.length && cellWidth(left + "..." + chars.at(-1) + right) <= width) right = chars.pop() + right;
           return [left + "..." + right];
         }
-        return wrap(value, width, 0);
+        return this.wrapText(value, width, 0);
       });
       const height = Math.max(...cells.map(cell => cell.length));
       for (let line = 0; line < height; line++) {
@@ -271,7 +278,7 @@ export class Report {
   append(lines: readonly Span[][]): this { for (const line of lines) this.push([...line]); return this; }
   /** Append unindented wrapped text; standalone callers can use lineSpans to stream it. */
   line(text: string): this {
-    for (const line of lineSpans(this.clean(text), this.columns)) this.push(line);
+    for (const line of this.wrapText(this.clean(text), this.columns)) this.push([{ text: line }]);
     return this;
   }
   /** A free line in one role, indented two cells (a pointer to more detail, a note). */
@@ -302,12 +309,13 @@ export class Report {
   render(color: boolean): string[] { return this.out.map(line => paint(this.cleanLine(line), color, this.options.styles)); }
 }
 
-export function wrap(value: unknown, columns?: number, hang = 4): string[] {
+export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?: (text: string) => string): string[] {
   if (columns === undefined) return terminalText(value).replace(/\t/g, " ").split("\n");
   if (!Number.isFinite(columns) || columns < 1) throw new RangeError("wrap columns must be positive");
   const lines: string[] = [];
   const half = Math.floor(columns / 2);
-  const width = cellWidth;
+  const chunk = (text: string) => terminalText(sanitizeChunk ? sanitizeChunk(text) : text);
+  const width = (text: string) => cellWidth(chunk(text));
   for (const part of terminalText(value).replace(/\t/g, " ").split("\n")) {
     const indent = /^\s*/.exec(part)![0];
     const lead = Math.min(cellWidth(indent), half);
@@ -315,7 +323,7 @@ export function wrap(value: unknown, columns?: number, hang = 4): string[] {
     const first = lines.length;
     let start = " ".repeat(lead);
     let line = start;
-    const push = () => { lines.push(line.trimEnd()); line = start = pad; };
+    const push = () => { lines.push(chunk(line.trimEnd())); line = start = pad; };
     for (const token of part.slice(indent.length).match(/\s+|\S+/g) ?? []) {
       if (width(line + token) <= columns) { line += token; continue; }
       if (line !== start) push();
@@ -325,7 +333,7 @@ export function wrap(value: unknown, columns?: number, hang = 4): string[] {
         line += char;
       }
     }
-    if (line !== start || lines.length === first) lines.push(line.trimEnd());
+    if (line !== start || lines.length === first) lines.push(chunk(line.trimEnd()));
   }
   return lines;
 }
