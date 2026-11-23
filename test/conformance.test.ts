@@ -34,6 +34,7 @@ for (const file of readdirSync(new URL("../fixtures/v1/report/", import.meta.url
     const report = new Report(fixture.input.columns ?? undefined, fixture.input.ascii, { sanitize, styles: fixture.input.styles, ...fixture.input.reportOptions });
     for (const operation of fixture.input.operations) {
       switch (operation.op) {
+        case "note": report.note(operation.text, operation.role); break;
         case "line": report.line(operation.text); if (operation.lines) expect(lineSpans(operation.text, fixture.input.columns ?? undefined).map(line => paint(line, false))).toEqual(operation.lines); break;
         case "append": report.append(operation.lines); break;
         case "header": report.header(operation.tool, operation.name, operation.context); break;
@@ -177,4 +178,13 @@ test("explicit table widths are validated and remain fixed at narrow report widt
   expect(() => new Report().table(["a"], [["x"]], 0, {widths:[0]})).toThrow("one positive integer per column");
   const lines = new Report(5).table(["A", "B"], [["x", "y"]], 1, {indent:0, widths:[4,4]}).render(false);
   expect(lines).toEqual(["A     B", "x     y"]);
+});
+
+test("chunk sanitization counts quote width and preserves report indentation", () => {
+  const sanitize = (text: string) => text.replace(/^(?=\s*(\[agent-hub\b|--- from ))/gim, "> ");
+  const options = {sanitize, sanitizeFirst:true, sanitizeChunks:true};
+  expect(new Report(16, false, options).note("--- from x --- from x").render(false)).toEqual(["  > --- from x", "  > --- from x"]);
+  const lines = new Report(12, false, options).note("abc [agent-hub message from test]").render(false);
+  expect(lines).toEqual(["  abc", "  [agent-hu", "  b message", "  from test]"]);
+  for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(12);
 });
