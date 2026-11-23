@@ -1,0 +1,47 @@
+{
+  "id": "table-clipping-60",
+  "input": {
+    "columns": 60,
+    "ascii": false,
+    "styles": {
+      "peer": "\u001b[36m"
+    },
+    "operations": [
+      {
+        "op": "table",
+        "head": [
+          "name",
+          "value"
+        ],
+        "rows": [
+          [
+            {
+              "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "style": "peer"
+            },
+            "ready"
+          ]
+        ],
+        "flexible": 1,
+        "options": {
+          "indent": 0,
+          "headerCase": "preserve",
+          "columnCaps": [
+            "third",
+            null
+          ],
+          "clip": true,
+          "headingStyle": "peer"
+        }
+      }
+    ]
+  },
+  "plain": [
+    "name                      value",
+    "xxxxxxxxxxxxxxxxxxxxx...  ready"
+  ],
+  "colored": [
+    "\u001b[36mname                    \u001b[0m  \u001b[36mvalue\u001b[0m",
+    "\u001b[36mxxxxxxxxxxxxxxxxxxxxx...\u001b[0m  ready"
+  ]
+}

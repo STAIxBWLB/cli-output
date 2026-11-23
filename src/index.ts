@@ -89,6 +89,9 @@ export interface TableOptions {
   headerCase?: "upper" | "preserve";
   emptyCell?: "dash" | "blank";
   widths?: readonly number[];
+  columnCaps?: readonly (number | "third" | null)[];
+  clip?: boolean;
+  headingStyle?: string;
 }
 export interface KvOptions { colon?: boolean; omitEmpty?: boolean }
 /** Standard semantic roles take precedence over optional consumer styles. */
@@ -217,6 +220,9 @@ export class Report {
     if (options.widths && (options.widths.length !== head.length || options.widths.some(width => !Number.isSafeInteger(width) || width < 1))) {
       throw new RangeError("table widths must contain one positive integer per column");
     }
+    if (options.columnCaps && (options.columnCaps.length !== head.length || options.columnCaps.some(cap => cap !== null && cap !== "third" && (!Number.isSafeInteger(cap) || cap < 1)))) {
+      throw new RangeError("table columnCaps must contain one positive integer, third, or null per column");
+    }
     const heading = (i: number) => options.headerCase === "preserve" ? this.clean(head[i]!) : this.clean(head[i]!).toUpperCase();
     const clean = rows.map(row => head.map((_, i) => {
       const cell = row[i] ?? "";
@@ -232,7 +238,9 @@ export class Report {
     const widths = keep.map(i => {
       if (options.widths) return options.widths[i]!;
       const natural = Math.max(cellWidth(heading(i)), ...clean.map(row => cellWidth(row[i]!.text)));
-      return i === flexible ? natural : Math.min(32, natural);
+      const cap = options.columnCaps?.[i];
+      const limit = cap === "third" ? Math.max(24, Math.floor((this.columns ?? 96) / 3)) : cap ?? (i === flexible ? natural : 32);
+      return Math.min(limit, natural);
     });
     if (this.columns !== undefined && !options.widths) {
       const available = Math.max(keep.length, this.columns - indent - 2 * (keep.length - 1));
@@ -247,11 +255,20 @@ export class Report {
     const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
     const headings = keep.map((i, n) => this.wrapText(heading(i), widths[n]!, 0));
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
-      this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), role: "key" as const }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
+      this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), ...(options.headingStyle ? { style: options.headingStyle } : { role: "key" as const }) }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
     }
     for (const row of clean) {
       const cells = keep.map((i, n) => {
         const value = row[i]!.text, width = Math.max(1, widths[n]!);
+        if (options.clip && i !== flexible && cellWidth(value) > width) {
+          const marker = ".".repeat(Math.min(3, width));
+          let prefix = "";
+          for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(value)) {
+            if (cellWidth(this.clean(prefix + segment + marker)) > width) break;
+            prefix += segment;
+          }
+          return [this.clean(prefix + marker)];
+        }
         if (i !== flexible && value.includes("/") && cellWidth(value) > width && width > 3) {
           let left = "", right = "";
           const chars = [...value];

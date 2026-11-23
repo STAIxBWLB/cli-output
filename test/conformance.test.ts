@@ -188,3 +188,11 @@ test("chunk sanitization counts quote width and preserves report indentation", (
   expect(lines).toEqual(["  abc", "  [agent-hu", "  b message", "  from test]"]);
   for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(12);
 });
+
+test("table clipping validates caps and preserves grapheme clusters", () => {
+  expect(() => new Report(60).table(["name"], [["x"]], 0, {columnCaps:[0]})).toThrow("columnCaps");
+  expect(() => new Report(60).table(["name", "value"], [["x", "y"]], 1, {columnCaps:[24]})).toThrow("columnCaps");
+  const lines = new Report(60).table(["name", "value"], [["한글한글한글", "ok"]], 1, {columnCaps:[7, null], clip:true}).render(false);
+  expect(lines[1]).toContain("한글...");
+  expect(cellWidth(lines[1]!)).toBeLessThanOrEqual(60);
+});
