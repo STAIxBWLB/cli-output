@@ -226,3 +226,13 @@ test("wrap validates widths according to the split policy", () => {
   expect(wrap("ab", NaN, 4, undefined, false, "codepoint")).toEqual(["ab"]);
   expect(wrap("ab", Infinity, 4, undefined, false, "codepoint")).toEqual(["ab"]);
 });
+
+test("prewrapped tables accept zero only for the flexible column", () => {
+  const report = new Report(10);
+  const head = ["first", "second"];
+  const row = [["one", "two"]];
+  expect(() => report.table(head, row, 1, { prewrapped: "body", widths: [0, 2] })).toThrow(RangeError);
+  expect(() => report.table(head, row, 1, { prewrapped: "all", widths: [2, -1] })).toThrow(RangeError);
+  expect(() => report.table(head, row, 1, { widths: [2, 0] })).toThrow(RangeError);
+  expect(() => report.table(head, row, 1, { prewrapped: "body", widths: [2, 0] })).not.toThrow();
+});
