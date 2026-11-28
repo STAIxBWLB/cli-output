@@ -1,0 +1,28 @@
+{
+  "id": "legacy-split",
+  "input": {
+    "columns": 10,
+    "ascii": false,
+    "reportOptions": {
+      "split": "codepoint"
+    },
+    "operations": [
+      {
+        "op": "line",
+        "text": "xxxxxxx👩‍💻🇰🇷yyyyyyyyyyyyyyyyyyyyy"
+      }
+    ]
+  },
+  "plain": [
+    "xxxxxxx👩‍💻🇰",
+    "🇷yyyyyyyyy",
+    "yyyyyyyyyy",
+    "yy"
+  ],
+  "colored": [
+    "xxxxxxx👩‍💻🇰",
+    "🇷yyyyyyyyy",
+    "yyyyyyyyyy",
+    "yy"
+  ]
+}

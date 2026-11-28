@@ -82,6 +82,7 @@ export interface ReportOptions {
   sanitizeFirst?: boolean;
   sanitizeChunks?: boolean;
   keepTokensWhole?: boolean;
+  split?: "grapheme" | "codepoint";
 }
 export type TableCell = string | Span;
 export interface TableOptions {
@@ -161,7 +162,7 @@ export class Report {
     const chunk = this.options.sanitizeChunks && this.options.sanitize
       ? (value: string) => this.clean(value + " ").slice(0, -1)
       : undefined;
-    return wrap(text, columns, hang, chunk, keepTokensWhole);
+    return wrap(text, columns, hang, chunk, keepTokensWhole, this.options.split);
   }
   /** The text as lines at most `room` cells wide, or as one line per source line when there is no wrap width. */
   private fit(text: string, room: number): string[] {
@@ -327,9 +328,13 @@ export class Report {
   render(color: boolean): string[] { return this.out.map(line => paint(this.cleanLine(line), color, this.options.styles)); }
 }
 
-export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?: (text: string) => string, keepTokensWhole = false): string[] {
+export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?: (text: string) => string, keepTokensWhole = false, split: NonNullable<ReportOptions["split"]> = "grapheme"): string[] {
   if (columns === undefined) return terminalText(value).replace(/\t/g, " ").split("\n");
-  if (!Number.isFinite(columns) || columns < 1) throw new RangeError("wrap columns must be positive");
+  if (split === "codepoint") {
+    if (columns < 0) throw new RangeError("wrap columns must be non-negative in codepoint mode");
+  } else if (!Number.isFinite(columns) || columns < 1) {
+    throw new RangeError("wrap columns must be positive");
+  }
   const lines: string[] = [];
   const half = Math.floor(columns / 2);
   const chunk = (text: string) => terminalText(sanitizeChunk ? sanitizeChunk(text) : text);
@@ -347,7 +352,9 @@ export function wrap(value: unknown, columns?: number, hang = 4, sanitizeChunk?:
       if (line !== start) push();
       if (/^\s/.test(token)) continue;
       if (keepTokensWhole) { line += token; continue; }
-      for (const { segment: char } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(token)) {
+      const segments = split === "codepoint" ? token : new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(token);
+      for (const segment of segments) {
+        const char = typeof segment === "string" ? segment : segment.segment;
         if (line !== start && width(line + char) > columns) push();
         line += char;
       }
