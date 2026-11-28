@@ -20,7 +20,7 @@ for (const c of errors) test(`error ${c.id}`, () => {
   expect(spans.map(line => paint(line, true))).toEqual(c.colored);
 });
 for (const c of texts) test(`text ${c.id}`, () => expect(terminalText(c.input, c.options)).toBe(c.expected));
-for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns, c.hang)).toEqual(c.expected));
+for (const c of wraps) test(`wrap ${c.id}`, () => expect(wrap(c.input, c.columns, c.hang, undefined, false, c.split as Parameters<typeof wrap>[5])).toEqual(c.expected));
 for (const c of spanWraps) test(`span wrap ${c.id}`, () => {
   const lines = wrapSpans(c.input as Parameters<typeof wrapSpans>[0], c.columns, c.hang);
   expect<unknown>(lines).toEqual(c.expected);
@@ -213,4 +213,16 @@ test("whole-token policy keeps non-flexible table columns aligned", () => {
   const valueAt = lines.find(line => line.includes("ok"))!.indexOf("ok");
   expect(valueAt).toBe(headingAt);
   for (const line of lines) expect(cellWidth(line)).toBeLessThanOrEqual(30);
+});
+
+test("wrap validates widths according to the split policy", () => {
+  for (const width of [0, 0.5, NaN, Infinity, -1, -Infinity]) {
+    expect(() => wrap("ab", width)).toThrow(RangeError);
+  }
+  for (const width of [-1, -Infinity]) {
+    expect(() => wrap("ab", width, 4, undefined, false, "codepoint")).toThrow(RangeError);
+  }
+  expect(wrap("ab", 0.5, 4, undefined, false, "codepoint")).toEqual(["a", "b"]);
+  expect(wrap("ab", NaN, 4, undefined, false, "codepoint")).toEqual(["ab"]);
+  expect(wrap("ab", Infinity, 4, undefined, false, "codepoint")).toEqual(["ab"]);
 });

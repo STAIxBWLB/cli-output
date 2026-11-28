@@ -2,6 +2,10 @@
 
 Notable changes to `@staix/cli-output`. During 0.x a breaking API or token change is a minor release and anything else is a patch (#5). Each release is published from its `v<version>` tag through npm trusted publishing.
 
+## Unreleased
+
+- Add opt-in code-point wrapping to `wrap` and `ReportOptions`. Direct `wrap` calls in this mode accept zero-width layouts. (issue #36)
+
 ## 0.1.3 - 2026-11-23
 
 - **Added**
