@@ -5,6 +5,7 @@ Notable changes to `@staix/cli-output`. During 0.x a breaking API or token chang
 ## Unreleased
 
 - Add opt-in code-point wrapping to `wrap` and `ReportOptions`. Direct `wrap` calls in this mode accept zero-width layouts. (issue #36)
+- Add opt-in table separator styling, raw final flexible cells, and prewrapped rows with explicit zero-width flexible columns. (issue #37)
 
 ## 0.1.3 - 2026-11-23
 

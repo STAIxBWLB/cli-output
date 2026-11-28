@@ -94,6 +94,9 @@ export interface TableOptions {
   columnCaps?: readonly (number | "third" | null)[];
   clip?: boolean;
   headingStyle?: string;
+  separatorStyle?: "plain" | "preceding";
+  rawLastCell?: boolean;
+  prewrapped?: "body" | "all";
 }
 export interface KvOptions { colon?: boolean; omitEmpty?: boolean }
 /** Standard semantic roles take precedence over optional consumer styles. */
@@ -219,20 +222,28 @@ export class Report {
     if (flexible < 0 || flexible >= head.length) throw new RangeError(`flexible column ${flexible} must be between 0 and ${head.length - 1}`);
     const indent = options.indent ?? 2;
     if (!Number.isInteger(indent) || indent < 0) throw new RangeError("table indent must be a nonnegative integer");
-    if (options.widths && (options.widths.length !== head.length || options.widths.some(width => !Number.isSafeInteger(width) || width < 1))) {
-      throw new RangeError("table widths must contain one positive integer per column");
+    if (options.widths && (options.widths.length !== head.length || options.widths.some((width, i) => !Number.isSafeInteger(width) || width < (options.prewrapped && i === flexible ? 0 : 1)))) {
+      throw new RangeError(options.prewrapped
+        ? "table widths must contain one positive integer per column, or zero for the flexible column"
+        : "table widths must contain one positive integer per column");
     }
     if (options.columnCaps && (options.columnCaps.length !== head.length || options.columnCaps.some(cap => cap !== null && cap !== "third" && (!Number.isSafeInteger(cap) || cap < 1)))) {
       throw new RangeError("table columnCaps must contain one positive integer, third, or null per column");
     }
+    const rawLast = options.rawLastCell && flexible === head.length - 1;
+    const flatten = (text: string) => {
+      const flat = text.replace(/[\n\t]/g, " ");
+      return options.prewrapped && text.includes("\t") ? this.clean(flat) : flat;
+    };
     const heading = (i: number) => options.headerCase === "preserve" ? this.clean(head[i]!) : this.clean(head[i]!).toUpperCase();
     const clean = rows.map(row => head.map((_, i) => {
       const cell = row[i] ?? "";
-      const value = this.clean(typeof cell === "string" ? cell : cell.text).replace(/[\n\t]/g, " ");
-      const text = value || (options.emptyCell === "blank" ? "" : "-");
+      const value = this.clean(typeof cell === "string" ? cell : cell.text);
+      const raw = rawLast && i === flexible;
+      const text = raw ? value : flatten(value) || (options.emptyCell === "blank" ? "" : "-");
       const role = typeof cell === "string" ? undefined : cell.role;
       const style = typeof cell === "string" ? undefined : cell.style;
-      return { text, role: role ?? (text === "-" && !style ? "hint" as const : undefined), style };
+      return { text, role: role ?? (text === "-" && !style && !raw && !options.prewrapped ? "hint" as const : undefined), style };
     }));
     const keep = head.map((_, i) => i).filter(i => options.dropEmptyColumns === false || clean.some(row => row[i]!.text !== "-" && row[i]!.text !== ""));
     if (!keep.length) return this;
@@ -254,14 +265,48 @@ export class Report {
         widths[candidates[0]!.i]!--;
       }
     }
-    const pad = (text: string, width: number) => text + " ".repeat(Math.max(0, width - cellWidth(text)));
-    const headings = keep.map((i, n) => this.wrapText(heading(i), widths[n]!, 0, false));
+    const preceding = options.separatorStyle === "preceding";
+    const last = keep.length - 1;
+    const unpadded = (n: number) => n === last && (!options.prewrapped || (rawLast && keep[n] === flexible));
+    const formatCell = (value: string, n: number) => {
+      const padding = unpadded(n) ? 0 : Math.max(0, widths[n]! - cellWidth(value));
+      const text = value + " ".repeat(padding + (preceding && n < last ? 2 : 0));
+      // Padding can complete a header marker. Sanitize the styled cell before assembling the row.
+      return preceding ? this.clean(text) : text;
+    };
+    const clipPrewrapped = (value: string, width: number) => {
+      if (cellWidth(value) <= width) return value;
+      const marker = ".".repeat(Math.min(3, width));
+      let prefix = "";
+      for (const char of value) {
+        if (cellWidth(this.clean(prefix + char)) > width - marker.length) break;
+        prefix += char;
+      }
+      return this.clean(prefix) + marker;
+    };
+    const headingStyle = options.headingStyle ? { style: options.headingStyle } : { role: "key" as const };
+    const headings = keep.map((i, n) => {
+      const text = heading(i);
+      if (options.prewrapped === "all") return [text];
+      return this.wrapText(text, options.prewrapped ? Math.max(1, widths[n]!) : widths[n]!, 0, false);
+    });
     for (let line = 0; line < Math.max(...headings.map(cell => cell.length)); line++) {
-      this.push([{ text: " ".repeat(indent) }, ...headings.flatMap((cell, n) => [{ text: n === keep.length - 1 ? (cell[line] ?? "") : pad(cell[line] ?? "", widths[n]!), ...(options.headingStyle ? { style: options.headingStyle } : { role: "key" as const }) }, ...(n < keep.length - 1 ? [{ text: "  " }] : [])])]);
+      const spans: Span[] = [{ text: " ".repeat(indent) }];
+      for (let n = 0; n <= last; n++) {
+        const value = headings[n]![line] ?? "";
+        const text = options.prewrapped && !(rawLast && keep[n] === flexible)
+          ? clipPrewrapped(flatten(value), widths[n]!)
+          : value;
+        spans.push({ text: formatCell(text, n), ...headingStyle });
+        if (!preceding && n < last) spans.push({ text: "  " });
+      }
+      this.push(spans);
     }
     for (const row of clean) {
       const cells = keep.map((i, n) => {
-        const value = row[i]!.text, width = Math.max(1, widths[n]!);
+        const value = row[i]!.text, width = options.prewrapped ? widths[n]! : Math.max(1, widths[n]!);
+        if (rawLast && i === flexible) return [value];
+        if (options.prewrapped) return [clipPrewrapped(value, width)];
         if (options.clip && i !== flexible && cellWidth(value) > width) {
           const marker = ".".repeat(Math.min(3, width));
           let prefix = "";
@@ -285,8 +330,10 @@ export class Report {
         const spans: Span[] = [{ text: " ".repeat(indent) }];
         for (let n = 0; n < keep.length; n++) {
           const value = cells[n]![line] ?? "";
-          spans.push({ text: n === keep.length - 1 ? value : pad(value, widths[n]!), ...(value && row[keep[n]!]!.role ? { role: row[keep[n]!]!.role } : {}), ...(value && row[keep[n]!]!.style ? { style: row[keep[n]!]!.style } : {}) });
-          if (n < keep.length - 1) spans.push({ text: "  " });
+          const cell = row[keep[n]!]!;
+          const hasStyle = value || (preceding && line < cells[n]!.length);
+          spans.push({ text: formatCell(value, n), ...(hasStyle && cell.role ? { role: cell.role } : {}), ...(hasStyle && cell.style ? { style: cell.style } : {}) });
+          if (!preceding && n < last) spans.push({ text: "  " });
         }
         this.push(spans);
       }

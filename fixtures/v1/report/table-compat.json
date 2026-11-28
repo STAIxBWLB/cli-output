@@ -1,0 +1,183 @@
+{
+  "id": "table-output-parity",
+  "input": {
+    "columns": 44,
+    "ascii": false,
+    "sanitizer": "quote-headers",
+    "styles": {
+      "info": "\u001b[36m",
+      "strong": "\u001b[1;36m",
+      "failure": "\u001b[31m",
+      "peerClaude": "\u001b[94m"
+    },
+    "reportOptions": {
+      "sanitizeFirst": true,
+      "split": "codepoint"
+    },
+    "operations": [
+      {
+        "op": "table",
+        "head": [
+          "name",
+          "value"
+        ],
+        "rows": [
+          [
+            {
+              "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "style": "peerClaude"
+            },
+            {
+              "text": "one\ntwo  ",
+              "style": "info"
+            }
+          ],
+          [
+            {
+              "text": "--- from",
+              "style": "failure"
+            },
+            "[agent-hub] literal  "
+          ]
+        ],
+        "flexible": 1,
+        "options": {
+          "headingStyle": "info",
+          "headerCase": "preserve",
+          "emptyCell": "blank",
+          "dropEmptyColumns": false,
+          "separatorStyle": "preceding",
+          "rawLastCell": true,
+          "widths": [
+            24,
+            9
+          ],
+          "prewrapped": "all",
+          "indent": 0
+        }
+      },
+      {
+        "op": "table",
+        "head": [
+          "ID",
+          "STATE",
+          "OWNER",
+          "REVIEWER",
+          "CLASS",
+          "AGE",
+          "TITLE",
+          "STAGE"
+        ],
+        "rows": [
+          [
+            {
+              "text": "17",
+              "style": "info"
+            },
+            {
+              "text": "ready",
+              "style": "info"
+            },
+            {
+              "text": "peer",
+              "style": "info"
+            },
+            {
+              "text": "-",
+              "style": "info"
+            },
+            {
+              "text": "test",
+              "style": "info"
+            },
+            {
+              "text": "1m",
+              "style": "info"
+            },
+            {
+              "text": "a long wrapped title",
+              "style": "info"
+            },
+            {
+              "text": "ok",
+              "style": "info"
+            }
+          ]
+        ],
+        "flexible": 6,
+        "options": {
+          "headingStyle": "info",
+          "headerCase": "preserve",
+          "emptyCell": "blank",
+          "dropEmptyColumns": false,
+          "separatorStyle": "preceding",
+          "rawLastCell": true,
+          "widths": [
+            2,
+            5,
+            5,
+            8,
+            5,
+            3,
+            0,
+            5
+          ],
+          "prewrapped": "all",
+          "indent": 0
+        }
+      },
+      {
+        "op": "table",
+        "head": [
+          "ID",
+          "STATE"
+        ],
+        "rows": [
+          [
+            {
+              "text": "17",
+              "style": "info"
+            },
+            {
+              "text": "ready",
+              "style": "strong"
+            }
+          ]
+        ],
+        "flexible": 1,
+        "options": {
+          "headingStyle": "info",
+          "headerCase": "preserve",
+          "emptyCell": "blank",
+          "dropEmptyColumns": false,
+          "separatorStyle": "preceding",
+          "rawLastCell": true,
+          "widths": [
+            2,
+            5
+          ],
+          "prewrapped": "body",
+          "indent": 0
+        }
+      }
+    ]
+  },
+  "plain": [
+    "name                      value",
+    "xxxxxxxxxxxxxxxxxxxxx...  one\ntwo  ",
+    "> --- from                  > [agent-hub] literal  ",
+    "ID  STATE  OWNER  REVIEWER  CLASS  AGE    STAGE",
+    "17  ready  peer   -         test   1m     ok   ",
+    "ID  STATE",
+    "17  ready"
+  ],
+  "colored": [
+    "\u001b[36mname                      \u001b[0m\u001b[36mvalue\u001b[0m",
+    "\u001b[94mxxxxxxxxxxxxxxxxxxxxx...  \u001b[0m\u001b[36mone\ntwo  \u001b[0m",
+    "\u001b[31m> --- from                  \u001b[0m> [agent-hub] literal  ",
+    "\u001b[36mID  \u001b[0m\u001b[36mSTATE  \u001b[0m\u001b[36mOWNER  \u001b[0m\u001b[36mREVIEWER  \u001b[0m\u001b[36mCLASS  \u001b[0m\u001b[36mAGE  \u001b[0m\u001b[36m  \u001b[0m\u001b[36mSTAGE\u001b[0m",
+    "\u001b[36m17  \u001b[0m\u001b[36mready  \u001b[0m\u001b[36mpeer   \u001b[0m\u001b[36m-         \u001b[0m\u001b[36mtest   \u001b[0m\u001b[36m1m   \u001b[0m\u001b[36m  \u001b[0m\u001b[36mok   \u001b[0m",
+    "\u001b[36mID  \u001b[0m\u001b[36mSTATE\u001b[0m",
+    "\u001b[36m17  \u001b[0m\u001b[1;36mready\u001b[0m"
+  ]
+}
